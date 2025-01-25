@@ -1,13 +1,13 @@
 const express = require("express");
+const cors = require("cors");
+const fileUpload = require('express-fileupload');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
-const cors = require("cors");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
-const fileUpload = require('express-fileupload');
-const cron = require('node-cron');
-const moment = require('moment-timezone');
+
+const userRoute = require('./app/routes/user.route');
 
 dotenv.config();
 
@@ -20,12 +20,8 @@ const app = express();
 // const credentials = { key: privateKey, cert: certificate };
 
 const server = http.createServer(app);
-// const server = https.createServer(credentials, app);
 
 app.use(fileUpload());
-
-// require("./app/socketServer")(server);
-// require("./app/walletavatar")
 
 var corsOptions = {
   origin: "*"
@@ -37,163 +33,16 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const db = require("./app/models");
-
-db.mongoose
-  .connect(db.url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-  .then(() => {
-    console.log("Connected to the database!");
-  })
-  .catch(err => {
-    console.log("Cannot connect to the database!", err);
-    process.exit();
-  });
-
-app.get("/", (req, res) => {
-  res.json({ message: "Server is running" });
-});
-
-require('./app/routes/title.route.js')(app);
-
-const { sendSMS } = require("./app/controllers/twilio.js");
-
-let invoices = [];
-
-// cron.schedule('50 10 * * 6', () => {
-//   const facilities = [
-//     { id: 1, name: 'Facility A', amountDue: 100 },
-//     { id: 2, name: 'Facility B', amountDue: 200 },
-//   ];
-  
-//   facilities.forEach(facility => {
-//     const invoicePath = generateInvoice(facility);
-//     invoices.push({ facilityId: facility.id, path: invoicePath });
-//   });
-//   console.log('Invoices generated:', invoices);
-//   setInvoices(invoices);
-// });
-
-function extractStartTime(shiftTime) {
-  // const [startTime] = shiftTime.split(' - ');
-  // return moment(startTime, 'h:mm A').format('HH:mm');
-  // Handle case like "13-19" (24-hour format without AM/PM)
-  if (shiftTime.match(/^\d{2}-\d{2}$/)) {
-    const [startTime] = shiftTime.split('-');
-    return moment(startTime, 'HH').format('HH:mm');
-  }
-
-  // Handle time ranges with AM/PM (like "7a-3p" or "7:00 AM - 10:30 PM")
-  if (shiftTime.match(/^[0-9]{1,2}[ap]m/)) {
-    const [startTime] = shiftTime.split(' - ');
-    return moment(startTime, 'h:mma').format('HH:mm');  // handle "7a-3p" or "7:00 AM"
-  }
-
-  // Handle explicit AM/PM format like "7:00 AM - 10:30 PM"
-  if (shiftTime.match(/[AP]M/)) {
-    const [startTime] = shiftTime.split(' - ');
-    return moment(startTime, 'h:mm A').format('HH:mm');
-  }
-
-  // Handle simple times like "3a-6a" (without leading zeros)
-  if (shiftTime.match(/^[0-9]{1}[ap]m/)) {
-    const [startTime] = shiftTime.split('-');
-    return moment(startTime, 'h a').format('HH:mm');
-  }
-
-  return null;  // Return null for unsupported formats
-}
-
-cron.schedule('*/15 * * * *', async () => {
-  console.log('Running job reminder check at', moment().format('YYYY-MM-DD HH:mm:ss'));
-
-  try {
-    const currentDate = moment.tz(new Date(), 'America/Toronto').format('MM/DD/YYYY');
-    const twoHoursLater = moment.tz('America/Toronto').add(2, 'hours').format('HH:mm');
-
-    console.log(`Looking for jobs with start time: ${twoHoursLater}`);
-
-    // Fetch jobs with minimal fields
-    const jobs = await db.jobs.find(
-      { shiftDate: currentDate, jobStatus: 'Awarded' },
-      { jobId: 1, shiftTime: 1, location: 1 }
-    );
-
-    // if an endDate exist.
-    // Fetch all jobs with minimal fields
-    // const jobs = await db.jobs.find(
-    //   { jobStatus: 'Awarded' },
-    //   { jobId: 1, shiftTime: 1, location: 1 }
-    // );
-
-    // console.log(`Fetched ${jobs.length} jobs.`);
-
-    // // Filter jobs where shiftTime includes the current date
-    // const matchingJobs = jobs.filter(job => {
-    //   const [start, end] = job.shiftTime.split(' - ').map(time =>
-    //     moment.tz(time.trim(), 'MM/DD/YYYY hh:mm:ss A', 'America/Toronto')
-    //   );
-
-    //   // Check if the current date is within the range
-    //   return start.isSameOrBefore(moment.tz(currentDate, 'MM/DD/YYYY', 'America/Toronto'), 'day') &&
-    //          end.isSameOrAfter(moment.tz(currentDate, 'MM/DD/YYYY', 'America/Toronto'), 'day');
-    // });
-
-    console.log(`Fetched ${jobs.length} jobs for the date ${currentDate}.`);
-
-    // Filter jobs matching the 2-hour condition
-    const matchingJobs = jobs.filter(job => extractStartTime(job.shiftTime) === twoHoursLater);
-
-    console.log(`Found ${matchingJobs.length} matching jobs.`);
-
-    // Batch process jobs
-    await Promise.all(
-      matchingJobs.map(async (job) => {
-        const { jobId, location, shiftTime } = job;
-        console.log('Processing jobId:', jobId);
-
-        // Fetch awarded bidders
-        const bidders = await db.bids.find(
-          { jobId, bidStatus: 'Awarded' },
-          { caregiverId: 1 }
-        );
-
-        const caregiverIds = bidders.map(bid => bid.caregiverId);
-        console.log('Awarded caregiver IDs:', caregiverIds);
-
-        if (caregiverIds.length === 0) {
-          console.log(`No awarded bidders for jobId ${jobId}.`);
-          return;
-        }
-
-        // Fetch caregivers' phone numbers
-        const caregivers = await db.clinical.find(
-          { aic: { $in: caregiverIds } },
-          { phoneNumber: 1 }
-        );
-
-        console.log(`Found ${caregivers.length} caregivers for jobId ${jobId}.`);
-
-        // Send SMS notifications
-        await Promise.all(
-          caregivers.map(caregiver =>{
-            sendSMS(caregiver.phoneNumber, location)
-            console.log("phoneNumber",caregiver.phoneNumber)
-          })
-        );
-
-        console.log(`SMS notifications sent for jobId ${jobId}.`);
-      })
-    );
-  } catch (error) {
-    console.error('Error processing jobs:', error.message);
-  }
-});
+// Routes
+app.use('/users', userRoute);
 
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
+
+app.get("/", (req, res) => {
+  res.json({ message: "Server is running" });
+});
+
