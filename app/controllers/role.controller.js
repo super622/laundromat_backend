@@ -31,7 +31,7 @@ const addRole = async (req, res) => {
 
 // Get question by role_id
 const getQuestionByRoldId = async (req, res) => {
-    const { id } = req.body;
+    const { id } = req.params;
 
     await fetchAllRolesQuestions(id, (err, results) => {
         if (err) {
