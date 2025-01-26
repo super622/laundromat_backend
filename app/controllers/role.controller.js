@@ -1,4 +1,4 @@
-const { fetchAllRoles, createRole, findRoleByName } = require('../models/role.model');
+const { fetchAllRoles, createRole, findRoleByName, createRoleQuestion, fetchAllRolesQuestions, findRoleById } = require('../models/role.model');
 
 // Get all users
 const getAllRoles = async (req, res) => {
@@ -11,6 +11,7 @@ const getAllRoles = async (req, res) => {
     });
 };
 
+// Create a new Role
 const addRole = async (req, res) => {
     const { name } = req.body;
 
@@ -18,7 +19,7 @@ const addRole = async (req, res) => {
         const existingRole = await findRoleByName(name);
 
         if (existingRole) {
-          return res.status(400).json({ message: 'already in use' });
+            return res.status(400).json({ message: 'already in use' });
         }
 
         await createRole(name);
@@ -28,4 +29,31 @@ const addRole = async (req, res) => {
     }
 };
 
-module.exports = { getAllRoles, addRole };
+// Get question by role_id
+const getQuestionByRoldId = async (req, res) => {
+    const { id } = req.body;
+
+    await fetchAllRolesQuestions(id, (err, results) => {
+        if (err) {
+            console.error('Error fetching question:', err.message);
+            return res.status(500).send('Database query error');
+        }
+        return res.status(201).json({ data: results });
+    });
+};
+
+// Create a new question
+const addRoleQuestion = async (req, res) => {
+    const { id, question } = req.body;
+
+    const existingRole = await findRoleById(id);
+
+    if (!existingRole) {
+      return res.status(400).json({ message: 'Not exist role' });
+    }
+
+    await createRoleQuestion(id, question);
+    return res.status(201).json({ message: "Role question added successfully"});
+};
+
+module.exports = { getAllRoles, addRole, getQuestionByRoldId, addRoleQuestion };
