@@ -3,9 +3,11 @@
  * @returns { Promise<void> }
  */
 exports.up = function(knex) {
-    return knex.schema.createTable('roles', (table) => {
+    return knex.schema.createTable('role_answers', (table) => {
         table.increments('id').primary();
-        table.string('role_name').notNullable();
+        table.integer('user_id').notNullable();
+        table.integer('question_id').notNullable();
+        table.string('role_answer').notNullable();
         table.timestamps(true, true);
     });
 };
@@ -15,5 +17,5 @@ exports.up = function(knex) {
  * @returns { Promise<void> }
  */
 exports.down = function(knex) {
-    return knex.schema.dropTable('roles');
+    return knex.schema.dropTable('role_answers');
 };
