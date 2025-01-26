@@ -9,6 +9,7 @@ const bodyParser = require("body-parser");
 
 const userRoute = require('./app/routes/user.route');
 const authRoute = require('./app/routes/auth.route');
+const roleRoute = require('./app/routes/role.route');
 
 const authMiddleware = require('./app/middlewares/auth.middleware');
 
@@ -37,8 +38,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/users', authMiddleware, userRoute);
 app.use('/auth', authRoute);
+app.use('/users', authMiddleware, userRoute);
+app.use('/role', roleRoute);
 
 const PORT = process.env.PORT || 5000;
 
