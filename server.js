@@ -11,6 +11,7 @@ const userRoute = require('./app/routes/user.route');
 const authRoute = require('./app/routes/auth.route');
 const roleRoute = require('./app/routes/role.route');
 const planRoute = require('./app/routes/plan.route');
+const tagRoute = require('./app/routes/tag.route');
 
 const authMiddleware = require('./app/middlewares/auth.middleware');
 
@@ -43,6 +44,7 @@ app.use('/auth', authRoute);
 app.use('/users', userRoute);
 app.use('/role', roleRoute);
 app.use('/plan', planRoute);
+app.use('/tag', tagRoute);
 
 const PORT = process.env.PORT || 5000;
 
