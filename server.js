@@ -8,6 +8,9 @@ const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 
 const userRoute = require('./app/routes/user.route');
+const authRoute = require('./app/routes/auth.route');
+
+const authMiddleware = require('./app/middlewares/auth.middleware');
 
 dotenv.config();
 
@@ -34,7 +37,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/users', userRoute);
+app.use('/users', authMiddleware, userRoute);
+app.use('/auth', authMiddleware, authRoute);
 
 const PORT = process.env.PORT || 5000;
 

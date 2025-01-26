@@ -13,6 +13,7 @@ exports.up = function(knex) {
         table.string('category').notNullable();
         table.string('file').notNullable();
         table.string('image').notNullable();
+        table.string('tags').notNullable();
         table.timestamps(true, true);
     });
 };

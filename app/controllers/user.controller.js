@@ -1,4 +1,4 @@
-const { getAllUsers, addUser } = require('../models/user.model');
+const { getAllUsers } = require('../models/user.model');
 
 // Get all users
 const fetchUsers = (req, res) => {
@@ -11,16 +11,4 @@ const fetchUsers = (req, res) => {
   });
 };
 
-// Add a new user
-const createUser = (req, res) => {
-  const userData = req.body;
-  addUser(userData, (err, results) => {
-    if (err) {
-      console.error('Error adding user:', err.message);
-      return res.status(500).send('Database insertion error');
-    }
-    res.status(201).json({ message: 'User added successfully', userId: results.insertId });
-  });
-};
-
-module.exports = { fetchUsers, createUser };
+module.exports = { fetchUsers };

@@ -6,11 +6,5 @@ const getAllUsers = (callback) => {
   db.query(sql, callback);
 };
 
-// Add a new user
-const addUser = (userData, callback) => {
-  const sql = 'INSERT INTO users (name, email) VALUES (?, ?)';
-  const values = [userData.name, userData.email];
-  db.query(sql, values, callback);
-};
 
-module.exports = { getAllUsers, addUser };
+module.exports = { getAllUsers };
