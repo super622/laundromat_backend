@@ -6,7 +6,6 @@ exports.up = function(knex) {
     return knex.schema.createTable('payment_plans', (table) => {
         table.increments('id').primary();
         table.string('plan_name').notNullable();
-        table.string('plan_type').notNullable();
         table.integer('plan_price').notNullable();
         table.integer('plan_discount').nullable();
         table.timestamps(true, true);
