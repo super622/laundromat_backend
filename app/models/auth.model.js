@@ -6,6 +6,16 @@ const findUserByEmail = async (email) => {
   return user.length > 0 ? user[0] : null;
 };
 
+// Find last user's user_number
+const getLatestUserNumber = async () => {
+  try {
+    const [rows] = await db.promise().query('SELECT user_number FROM users ORDER BY user_number DESC LIMIT 1');
+    return rows.length > 0 ? rows[0]?.user_number + 1 : 1; // Return the latest user or null if no users exist
+  } catch (error) {
+    throw new Error(`Error fetching the latest user: ${error.message}`);
+  }
+};
+
 // Create a new user
 const createUser = async (name, email, hashedPassword, role, level, user_number) => {
   await db.promise().query('INSERT INTO users (user_name, email, password, user_role, level, user_number) VALUES (?, ?, ?, ?, ?, ?)', [
@@ -18,4 +28,4 @@ const createUser = async (name, email, hashedPassword, role, level, user_number)
   ]);
 };
 
-module.exports = { findUserByEmail, createUser };
+module.exports = { findUserByEmail, createUser, getLatestUserNumber };

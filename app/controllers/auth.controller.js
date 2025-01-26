@@ -1,10 +1,10 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, createUser } = require('../models/auth.model');
+const { findUserByEmail, createUser, getLatestUserNumber } = require('../models/auth.model');
 
 // SignUp function
 const signUp = async (req, res) => {
-  const { name, email, password, role, level, user_number } = req.body;
+  const { name, email, password, role } = req.body;
 
   try {
     // Check if user already exists
@@ -15,6 +15,11 @@ const signUp = async (req, res) => {
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const level = '1';
+
+    // Get the latest user_number
+    const user_number = await getLatestUserNumber();
 
     // Create the user
     await createUser(name, email, hashedPassword, role, level, user_number);
