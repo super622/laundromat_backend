@@ -5,7 +5,8 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 
 const s3 = new S3Client({
-   endpoint: `https://${process.env.DO_SPACES_ENDPOINT}`,
+    region: process.env.DO_SPACES_ENDPOINT,
+    endpoint: `https://${process.env.DO_SPACES_ENDPOINT}`,
     credentials: {
         accessKeyId: process.env.DO_SPACES_KEY,
         secretAccessKey: process.env.DO_SPACES_SECRET
