@@ -13,6 +13,7 @@ const roleRoute = require('./app/routes/role.route');
 const planRoute = require('./app/routes/plan.route');
 const tagRoute = require('./app/routes/tag.route');
 const likesRoute = require('./app/routes/likes.route');
+const imageRoute = require('./app/routes/image.route');
 
 const authMiddleware = require('./app/middlewares/auth.middleware');
 
@@ -47,6 +48,7 @@ app.use('/api//role', roleRoute);
 app.use('/api//plan', planRoute);
 app.use('/api//tag', tagRoute);
 app.use('/api//likes', likesRoute);
+app.use('/image', imageRoute);
 
 const PORT = process.env.PORT || 5000;
 
