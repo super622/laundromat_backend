@@ -41,12 +41,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/auth', authRoute);
-app.use('/users', userRoute);
-app.use('/role', roleRoute);
-app.use('/plan', planRoute);
-app.use('/tag', tagRoute);
-app.use('/likes', likesRoute);
+app.use('/api/auth', authRoute);
+app.use('/api//users', userRoute);
+app.use('/api//role', roleRoute);
+app.use('/api//plan', planRoute);
+app.use('/api//tag', tagRoute);
+app.use('/api//likes', likesRoute);
 
 const PORT = process.env.PORT || 5000;
 

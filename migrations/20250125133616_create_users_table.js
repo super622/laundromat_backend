@@ -7,10 +7,13 @@ exports.up = function(knex) {
         table.increments('id').primary();
         table.string('user_name').notNullable();
         table.string('email').notNullable().unique();
-        table.string('password').notNullable();
+        table.string('password').nullable();
         table.string('level').nullable();
-        table.string('user_number').notNullable();
+        // table.string('user_number').notNullable();
         table.integer('user_role').notNullable();
+        table.string('user_role_expertIn').nullable();
+        table.string('user_role_businessTime').nullable();
+        table.string('user_role_laundromatsCount').nullable();
         table.timestamps(true, true);
     });
 };
