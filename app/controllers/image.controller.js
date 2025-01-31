@@ -27,8 +27,8 @@ async function uploadToBucket(file) {
   
     const command = new PutObjectCommand(params);
     const upload = await s3.send(command);
-    console.log(`https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}/${params.Key}`);
-    return `https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}/${params.Key}`;
+    console.log(`https://${process.env.DO_SPACES_ENDPOINT}/${process.env.DO_SPACES_BUCKET}/${params.Key}`);
+    return `https://${process.env.DO_SPACES_ENDPOINT}/${process.env.DO_SPACES_BUCKET}/${params.Key}`;
 }
 
 const uploadImage = async (req, res) => {
