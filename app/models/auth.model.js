@@ -17,17 +17,15 @@ const findUserByEmail = async (email) => {
 // };
 
 // Create a new user
-const createUser = async (name, email, hashedPassword, role, level, role_expertIn, role_businessTime, role_laundromatsCount) => {
-  await db.promise().query('INSERT INTO users (user_name, email, password, user_role, level, user_role_expertIn, user_role_businessTime, user_role_laundromatsCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [
-    name,
-    email,
-    hashedPassword,
-    role,
-    level,
-    role_expertIn,
-    role_businessTime,
-    role_laundromatsCount
-  ]);
+// Create a new user and return the inserted user ID
+const createUser = async (name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount) => {
+  const [result] = await db.promise().query(
+    'INSERT INTO users (user_name, email, password, user_role, level, user_role_expertIn, user_role_businessTime, user_role_laundromatsCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount]
+  );
+  return result.insertId; // Return the ID of the newly inserted user
 };
+
+module.exports = { createUser, findUserByEmail };
 
 module.exports = { findUserByEmail, createUser };

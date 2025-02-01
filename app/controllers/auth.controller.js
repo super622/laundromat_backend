@@ -4,7 +4,7 @@ const { findUserByEmail, createUser, getLatestUserNumber } = require('../models/
 
 // SignUp function
 const signUp = async (req, res) => {
-  const { name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount} = req.body;
+  const { name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount } = req.body;
 
   try {
     // Check if user already exists
@@ -18,13 +18,13 @@ const signUp = async (req, res) => {
 
     const level = '1';
 
-    // Get the latest user_number
-    // const user_number = await getLatestUserNumber();
+    // Create the user and get the new user ID
+    const userId = await createUser(name, email, hashedPassword, role, level, role_expertIn, role_businessTime, role_laundromatsCount);
 
-    // Create the user
-    await createUser(name, email, hashedPassword, role, level, role_expertIn, role_businessTime, role_laundromatsCount);
-
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({
+      message: 'User registered successfully',
+      userId, // Include the new user ID in the response
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
