@@ -5,7 +5,8 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { v4: uuidv4 } = require('uuid');
 
 const s3 = new S3Client({
-   endpoint: `https://${process.env.DO_SPACES_ENDPOINT}`,
+    region: process.env.DO_SPACES_ENDPOINT,
+    endpoint: `https://${process.env.DO_SPACES_ENDPOINT}`,
     credentials: {
         accessKeyId: process.env.DO_SPACES_KEY,
         secretAccessKey: process.env.DO_SPACES_SECRET
@@ -26,8 +27,8 @@ async function uploadToBucket(file) {
   
     const command = new PutObjectCommand(params);
     const upload = await s3.send(command);
-    console.log(`https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}/${params.Key}`);
-    return `https://${process.env.DO_SPACES_BUCKET}.${process.env.DO_SPACES_ENDPOINT}/${params.Key}`;
+    console.log(`https://${process.env.DO_SPACES_ENDPOINT}/${process.env.DO_SPACES_BUCKET}/${params.Key}`);
+    return `https://${process.env.DO_SPACES_ENDPOINT}/${process.env.DO_SPACES_BUCKET}/${params.Key}`;
 }
 
 const uploadImage = async (req, res) => {
