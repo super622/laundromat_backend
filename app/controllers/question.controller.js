@@ -1,11 +1,12 @@
 const {
-    getAllQuestions,
-    getQuestionById,
     createQuestion,
     updateQuestion,
     deleteQuestion,
     insertAnswer,
-    getAllQuestionsWithAnswers  
+    getAllQuestionsWithAnswers,
+    createOrUpdateAnswer,
+    getAllQuestionsWithAnswersByID,
+    getAllQuestionsWithAnswersBySearchByUserId  
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
@@ -30,32 +31,6 @@ const {
     }
   };
 
-  // Get all questions
-  const getQuestions = async (req, res) => {
-    try {
-      const questions = await getAllQuestions();
-      res.status(200).json({ message: 'Questions fetched successfully', questions });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
-    }
-  };
-
-  // Get a specific question by ID
-  const getQuestion = async (req, res) => {
-    const { id } = req.params;
-  
-    try {
-      const question = await getQuestionById(id);
-      if (!question) {
-        return res.status(404).json({ message: 'Question not found' });
-      }
-  
-      res.status(200).json({ message: 'Question fetched successfully', question });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
-    }
-  };
-  
   // Create a new question
   const createNewQuestion = async (req, res) => {
     const {
@@ -179,13 +154,86 @@ const {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
+
+  const createOrUpdateAnswerController = async (req, res) => {
+    const { question_id, user_id, answer, isWho } = req.body;
+  
+    if (!question_id || !user_id || !answer) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+  
+    try {
+      const result = await createOrUpdateAnswer({ question_id, user_id, answer, isWho });
+      if (result) {
+        return res.status(200).json({
+          message: result === "insert"
+            ? "Answer created successfully."
+            : "Answer updated successfully.",
+          created: !!result,
+          updated: !result,
+        });
+      } else {
+        return res.status(500).json({ message: "Failed to create or update the answer." });
+      }
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
+  const getQuestionsWithAnswersById = async (req, res) => {
+    try {
+      const { user_id } = req.params; // Get user_id from request parameters
+  
+      if (!user_id) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+  
+      const questions = await getAllQuestionsWithAnswersByID(user_id);
+      res.status(200).json({
+        message: 'Questions with answers fetched successfully,' + user_id,
+        questions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Server error',
+        error: error.message,
+      });
+    }
+  };
+
+  const getQuestionsWithSearchByID = async (req, res) => {
+    try {
+      const { user_id, search, categories } = req.body; // Retrieve user_id, search, and categories from request body
+  
+      if (!user_id || !categories) {
+        return res.status(400).json({ message: 'User ID and categories are required' });
+      }
+  
+      const parsedCategories = Array.isArray(categories) ? categories : []; // Ensure categories is an array
+  
+      const questions = await getAllQuestionsWithAnswersBySearchByUserId(user_id, search || '', parsedCategories);
+  
+      res.status(200).json({
+        message: 'Questions with answers fetched successfully',
+        questions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Server error',
+        error: error.message,
+      });
+    }
+  };
+  
+  
   
   module.exports = {
     getQuestionsWithAnswers,
-    getQuestions,
-    getQuestion,
     createNewQuestion,
     updateExistingQuestion,
     deleteExistingQuestion,
+    createOrUpdateAnswerController,
+    getQuestionsWithAnswersById,
+    getQuestionsWithSearchByID
   };
   
