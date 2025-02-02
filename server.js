@@ -45,11 +45,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoute);
-app.use('/api//users', userRoute);
-app.use('/api//role', roleRoute);
-app.use('/api//plan', planRoute);
-app.use('/api//tag', tagRoute);
-app.use('/api//likes', likesRoute);
+app.use('/api/users', userRoute);
+app.use('/api/role', roleRoute);
+app.use('/api/plan', planRoute);
+app.use('/api/tag', tagRoute);
+app.use('/api/likes', likesRoute);
 app.use('/image', imageRoute);
 app.use('/api/question', questionRoute)
 app.use('/', gptRoute)

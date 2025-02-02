@@ -1,5 +1,35 @@
 const db = require('../config/db'); // Updated to use `promiseDb`
 
+// Create or update a like or dislike
+const createOrUpdateLikeOrDislike = async (user_id, question_id, type) => {
+  try {
+    // Check if a record exists for the given user_id and question_id
+    const [existingRecord] = await db.promise().query(
+      'SELECT id FROM likes_and_dislikes WHERE user_id = ? AND question_id = ?',
+      [user_id, question_id]
+    );
+
+    if (existingRecord.length > 0) {
+      // Update the existing record
+      const [updateResult] = await db.promise().query(
+        'UPDATE likes_and_dislikes SET type = ? WHERE user_id = ? AND question_id = ?',
+        [type, user_id, question_id]
+      );
+      return { message: 'Record updated successfully', updated: true };
+    } else {
+      // Create a new record
+      const [insertResult] = await db.promise().query(
+        'INSERT INTO likes_and_dislikes (user_id, question_id, type) VALUES (?, ?, ?)',
+        [user_id, question_id, type]
+      );
+      return { message: 'Record created successfully', created: true };
+    }
+  } catch (error) {
+    throw new Error(`Error creating or updating like/dislike: ${error.message}`);
+  }
+};
+
+
 // Fetch likes and dislikes counts by user_id
 const getLikesAndDislikesByUser = async (user_id) => {
   try {
@@ -42,4 +72,4 @@ const getLikesAndDislikesByQuestion = async (question_id) => {
   }
 };
 
-module.exports = { getLikesAndDislikesByUser, getLikesAndDislikesByQuestion };
+module.exports = { createOrUpdateLikeOrDislike, getLikesAndDislikesByUser, getLikesAndDislikesByQuestion };

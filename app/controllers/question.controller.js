@@ -4,7 +4,8 @@ const {
     createQuestion,
     updateQuestion,
     deleteQuestion,
-    insertAnswer 
+    insertAnswer,
+    getAllQuestionsWithAnswers  
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
@@ -13,6 +14,21 @@ const {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
+
+  const getQuestionsWithAnswers = async (req, res) => {
+    try {
+      const questions = await getAllQuestionsWithAnswers();
+      res.status(200).json({
+        message: 'Questions with answers fetched successfully',
+        questions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Server error',
+        error: error.message,
+      });
+    }
+  };
 
   // Get all questions
   const getQuestions = async (req, res) => {
@@ -23,7 +39,7 @@ const {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
-  
+
   // Get a specific question by ID
   const getQuestion = async (req, res) => {
     const { id } = req.params;
@@ -51,8 +67,8 @@ const {
       year,
       category,
       tags,
-      file = null,
-      image = null,
+      file,
+      image,
     } = req.body;
   
     // Validate required fields
@@ -165,6 +181,7 @@ const {
   };
   
   module.exports = {
+    getQuestionsWithAnswers,
     getQuestions,
     getQuestion,
     createNewQuestion,

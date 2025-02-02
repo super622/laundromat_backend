@@ -1,4 +1,23 @@
-const { getLikesAndDislikesByUser, getLikesAndDislikesByQuestion } = require('../models/likes.model');
+const { getLikesAndDislikesByUser, getLikesAndDislikesByQuestion, createOrUpdateLikeOrDislike  } = require('../models/likes.model');
+
+
+// Create or update like or dislike
+const handleLikeOrDislike = async (req, res) => {
+    const { user_id, question_id, type } = req.body;
+  
+    // Ensure type is either 1 (like) or 0 (dislike)
+    if (![0, 1].includes(type)) {
+      return res.status(400).json({ message: 'Invalid type. Must be 0 (dislike) or 1 (like).' });
+    }
+  
+    try {
+      const result = await createOrUpdateLikeOrDislike(user_id, question_id, type);
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error handling like or dislike:', error.message);
+      return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
 
 // Fetch likes and dislikes count by user_id
 const getLikesDislikesByUser = async (req, res) => {
@@ -26,4 +45,4 @@ const getLikesDislikesByQuestion = async (req, res) => {
     }
 };
 
-module.exports = { getLikesDislikesByUser, getLikesDislikesByQuestion };
+module.exports = { getLikesDislikesByUser, getLikesDislikesByQuestion, handleLikeOrDislike };

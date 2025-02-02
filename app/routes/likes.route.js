@@ -3,9 +3,12 @@ const { body, param, validationResult } = require('express-validator');
 const {
     getLikesDislikesByUser,
     getLikesDislikesByQuestion,
+    handleLikeOrDislike 
 } = require('../controllers/likes.controller.js');
 
 const router = express.Router();
+
+router.post('/likeordislike', handleLikeOrDislike);
 
 // GET: Fetch likes and dislikes count by user_id
 router.get(
