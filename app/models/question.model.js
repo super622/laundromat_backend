@@ -303,6 +303,9 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
 };
 
 const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categories) => {
+  // Determine whether to apply category filter
+  const hasCategories = categories && categories.length > 0;
+
   const query = `
     SELECT 
       q.id AS question_id, 
@@ -355,11 +358,12 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
       q.user_id = ?
       AND (
         q.question LIKE CONCAT('%', ?, '%') -- Search by question text
-        OR q.category IN (${categories.map(() => '?').join(',')}) -- Search by categories
+        ${hasCategories ? `OR q.category IN (${categories.map(() => '?').join(',')})` : ''}
       );
   `;
 
-  const params = [user_id, user_id, search, ...categories]; // Dynamic parameters
+  // Build parameters dynamically
+  const params = hasCategories ? [user_id, user_id, search, ...categories] : [user_id, user_id, search];
 
   const [rows] = await db.promise().query(query, params);
 
@@ -413,6 +417,7 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
 
   return Object.values(questionsMap);
 };
+
 
 module.exports = {
   createQuestion,
