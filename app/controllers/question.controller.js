@@ -6,6 +6,7 @@ const {
     getAllQuestionsWithAnswers,
     createOrUpdateAnswer,
     getAllQuestionsWithAnswersByID,
+    getAllQuestionsWithAnswersBySearch,
     getAllQuestionsWithAnswersBySearchByUserId  
   } = require('../models/question.model');
 
@@ -119,7 +120,6 @@ const {
     }
   };
   
-  
   // Update a question by ID
   const updateExistingQuestion = async (req, res) => {
     const { id } = req.params;
@@ -225,6 +225,29 @@ const {
     }
   };
   
+  const getQuestionsWithSearch = async (req, res) => {
+    try {
+      const { search, categories } = req.body;
+  
+      if (!search || !categories) {
+        return res.status(400).json({ message: 'Search and categories are required' });
+      }
+  
+      const parsedCategories = Array.isArray(categories) ? categories : [];
+  
+      const questions = await getAllQuestionsWithAnswersBySearch(search || '', parsedCategories);
+  
+      res.status(200).json({
+        message: 'Questions with answers fetched successfully',
+        questions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Server error',
+        error: error.message,
+      });
+    }
+  };
   
   
   module.exports = {
@@ -234,6 +257,7 @@ const {
     deleteExistingQuestion,
     createOrUpdateAnswerController,
     getQuestionsWithAnswersById,
-    getQuestionsWithSearchByID
+    getQuestionsWithSearchByID,
+    getQuestionsWithSearch
   };
   

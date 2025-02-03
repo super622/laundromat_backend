@@ -8,7 +8,8 @@ const {
   getQuestionsWithAnswers,
   createOrUpdateAnswerController,
   getQuestionsWithAnswersById,
-  getQuestionsWithSearchByID
+  getQuestionsWithSearchByID,
+  getQuestionsWithSearch
 } = require('../controllers/question.controller');
 
 router.get('/allquestionwithanswer', getQuestionsWithAnswers);
@@ -18,5 +19,6 @@ router.put('/:id', updateExistingQuestion); // PUT to update a question
 router.delete('/:id', deleteExistingQuestion); // DELETE a question
 router.get('/allquestionwithanswerbyid/:user_id', getQuestionsWithAnswersById);
 router.post('/searchmyquestion', getQuestionsWithSearchByID);
+router.post('/searchquestion', getQuestionsWithSearch);
 
 module.exports = router;
