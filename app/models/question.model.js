@@ -32,44 +32,38 @@ const getAllQuestionsWithAnswers = async () => {
       COALESCE(dislikes.count, 0) AS dislikes_count
     FROM 
       questions q
-    LEFT JOIN 
-      answers a 
-    ON 
-      q.id = a.question_id
-    LEFT JOIN 
-      users qu
-    ON 
-      q.user_id = qu.id
-    LEFT JOIN 
-      users au
-    ON 
-      a.user_id = au.id
+    LEFT JOIN users qu ON q.user_id = qu.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
-      FROM likes_and_dislikes
-      WHERE type = 1
-      GROUP BY question_id
-    ) likes
-    ON q.id = likes.question_id
+      SELECT a1.*
+      FROM answers a1
+      INNER JOIN (
+            SELECT question_id, MIN(created_at) AS min_created_at
+            FROM answers
+            GROUP BY question_id
+      ) a2 ON a1.question_id = a2.question_id AND a1.created_at = a2.min_created_at
+    ) a ON q.id = a.question_id
+    LEFT JOIN users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
-      FROM likes_and_dislikes
-      WHERE type = 0
-      GROUP BY question_id
-    ) dislikes
-    ON q.id = dislikes.question_id;
+            SELECT question_id, COUNT(*) AS count
+            FROM likes_and_dislikes
+            WHERE type = 1
+            GROUP BY question_id
+    ) likes ON q.id = likes.question_id
+    LEFT JOIN (
+            SELECT question_id, COUNT(*) AS count
+            FROM likes_and_dislikes
+            WHERE type = 0
+            GROUP BY question_id
+    ) dislikes ON q.id = dislikes.question_id
+    ORDER BY q.id DESC;
   `;
 
   const [rows] = await db.promise().query(query);
-
-  // Group answers and likes/dislikes by question
   const questionsMap = {};
 
-  rows.forEach((row) => {
-    const questionId = row.question_id;
-
-    if (!questionsMap[questionId]) {
-      questionsMap[questionId] = {
+  rows.forEach((row, index) => {
+    if (!questionsMap[index]) {
+      questionsMap[index] = {
         question_id: row.question_id,
         question: row.question,
         brand: row.brand,
@@ -90,7 +84,7 @@ const getAllQuestionsWithAnswers = async () => {
               level: row.question_user_level,
               user_role: row.question_user_role,
             }
-          : null, // If no user is associated, set it to null
+          : null,
         likes_count: row.likes_count || 0,
         dislikes_count: row.dislikes_count || 0,
         answers: [],
@@ -98,11 +92,11 @@ const getAllQuestionsWithAnswers = async () => {
     }
 
     if (row.answer_id) {
-      questionsMap[questionId].answers.push({
+      questionsMap[index].answers.push({
         answer_id: row.answer_id,
         answer: row.answer,
         user_id: row.answer_user_id,
-        user_name: row.answer_user_name, // Add user_name here
+        user_name: row.answer_user_name,
         created_at: row.answer_created_at,
         updated_at: row.answer_updated_at,
         isWho: row.isWho,
@@ -110,7 +104,6 @@ const getAllQuestionsWithAnswers = async () => {
     }
   });
 
-  // Convert questions map to an array
   return Object.values(questionsMap);
 };
 
@@ -245,7 +238,8 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
           SELECT 1 FROM answers WHERE answers.question_id = q.id AND answers.user_id != ?
-      )); 
+      ))
+    ORDER BY q.id DESC;    
   `;
 
   const [rows] = await db.promise().query(query, [user_id, user_id, user_id]);
@@ -253,11 +247,10 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
   // Group answers and likes/dislikes by question
   const questionsMap = {};
 
-  rows.forEach((row) => {
-    const questionId = row.question_id;
+  rows.forEach((row, index) => {
 
-    if (!questionsMap[questionId]) {
-      questionsMap[questionId] = {
+    if (!questionsMap[index]) {
+      questionsMap[index] = {
         question_id: row.question_id,
         question: row.question,
         brand: row.brand,
@@ -286,7 +279,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
     }
 
     if (row.answer_id) {
-      questionsMap[questionId].answers.push({
+      questionsMap[index].answers.push({
         answer_id: row.answer_id,
         answer: row.answer,
         user_id: row.answer_user_id,
@@ -356,6 +349,7 @@ const getAllQuestionsWithAnswersBySearch = async (search, categories) => {
     WHERE 
       q.question LIKE CONCAT('%', ?, '%') -- Search by question text
       ${hasCategories ? `AND q.category IN (${categories.map(() => '?').join(',')})` : ''}
+    ORDER BY q.id DESC;
   `;
 
   // Build parameters dynamically
@@ -366,11 +360,10 @@ const getAllQuestionsWithAnswersBySearch = async (search, categories) => {
   // Group answers and likes/dislikes by question
   const questionsMap = {};
 
-  rows.forEach((row) => {
-    const questionId = row.question_id;
+  rows.forEach((row, index) => {
 
-    if (!questionsMap[questionId]) {
-      questionsMap[questionId] = {
+    if (!questionsMap[index]) {
+      questionsMap[index] = {
         question_id: row.question_id,
         question: row.question,
         brand: row.brand,
@@ -399,7 +392,7 @@ const getAllQuestionsWithAnswersBySearch = async (search, categories) => {
     }
 
     if (row.answer_id) {
-      questionsMap[questionId].answers.push({
+      questionsMap[index].answers.push({
         answer_id: row.answer_id,
         answer: row.answer,
         user_id: row.answer_user_id,
@@ -413,7 +406,6 @@ const getAllQuestionsWithAnswersBySearch = async (search, categories) => {
 
   return Object.values(questionsMap);
 };
-
 
 const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categories) => {
   // Determine whether to apply category filter
@@ -472,7 +464,8 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
       AND (
         q.question LIKE CONCAT('%', ?, '%') -- Search by question text
         ${hasCategories ? `OR q.category IN (${categories.map(() => '?').join(',')})` : ''}
-      );
+      )
+    ORDER BY q.id DESC;
   `;
 
   // Build parameters dynamically
@@ -483,11 +476,10 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
   // Group answers and likes/dislikes by question
   const questionsMap = {};
 
-  rows.forEach((row) => {
-    const questionId = row.question_id;
+  rows.forEach((row, index) => {
 
-    if (!questionsMap[questionId]) {
-      questionsMap[questionId] = {
+    if (!questionsMap[index]) {
+      questionsMap[index] = {
         question_id: row.question_id,
         question: row.question,
         brand: row.brand,
@@ -516,7 +508,7 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
     }
 
     if (row.answer_id) {
-      questionsMap[questionId].answers.push({
+      questionsMap[index].answers.push({
         answer_id: row.answer_id,
         answer: row.answer,
         user_id: row.answer_user_id,

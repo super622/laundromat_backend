@@ -27,5 +27,3 @@ const createUser = async (name, email, password, role, level, role_expertIn, rol
 };
 
 module.exports = { createUser, findUserByEmail };
-
-module.exports = { findUserByEmail, createUser };
