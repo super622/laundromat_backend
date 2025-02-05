@@ -38,5 +38,4 @@ router.post(
   },
   signIn
 );
-
 module.exports = router;

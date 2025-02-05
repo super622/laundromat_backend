@@ -49,15 +49,33 @@ const signIn = async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.user_role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    res.json({ message: 'Login successful', token });
+    // Return user details along with the token
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.user_name,
+        email: user.email,
+        role: user.user_role,
+        level: user.level,
+        role_expertIn: user.user_role_expertIn,
+        role_businessTime: user.user_role_businessTime,
+        role_laundromatsCount: user.user_role_laundromatsCount,
+        created_at: user.created_at,
+        updated_at: user.updated_at
+      }
+    });
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 module.exports = { signUp, signIn };
