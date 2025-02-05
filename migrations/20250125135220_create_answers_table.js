@@ -7,6 +7,7 @@ exports.up = function(knex) {
         table.increments('id').primary();
         table.integer('question_id').notNullable();
         table.string('answer').notNullable();
+        table.string('isWho').notNullable();
         table.integer('user_id').notNullable();
         table.timestamps(true, true);
     });
