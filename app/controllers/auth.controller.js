@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, createUser, getLatestUserNumber } = require('../models/auth.model');
+const { findUserByEmail, createUser, updateUser } = require('../models/auth.model');
 
 // SignUp function
 const signUp = async (req, res) => {
@@ -78,4 +78,28 @@ const signIn = async (req, res) => {
 };
 
 
-module.exports = { signUp, signIn };
+// Update User function (POST request)
+const updateUserProfile = async (req, res) => {
+  const { userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image } = req.body;
+
+  try {
+    // Hash password if provided
+    let hashedPassword = null;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    // Update user details
+    const updated = await updateUser(userId, name, email, hashedPassword, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image);
+
+    if (updated) {
+      res.status(200).json({ message: 'User profile updated successfully' });
+    } else {
+      res.status(400).json({ message: 'Failed to update user profile' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { signUp, signIn, updateUserProfile };

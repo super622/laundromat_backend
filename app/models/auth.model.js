@@ -6,17 +6,6 @@ const findUserByEmail = async (email) => {
   return user.length > 0 ? user[0] : null;
 };
 
-// Find last user's user_number
-// const getLatestUserNumber = async () => {
-//   try {
-//     const [rows] = await db.promise().query('SELECT user_number FROM users ORDER BY user_number DESC LIMIT 1');
-//     return rows.length > 0 ? rows[0]?.user_number + 1 : 1; // Return the latest user or null if no users exist
-//   } catch (error) {
-//     throw new Error(`Error fetching the latest user: ${error.message}`);
-//   }
-// };
-
-// Create a new user
 // Create a new user and return the inserted user ID
 const createUser = async (name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount) => {
   const [result] = await db.promise().query(
@@ -26,4 +15,65 @@ const createUser = async (name, email, password, role, level, role_expertIn, rol
   return result.insertId; // Return the ID of the newly inserted user
 };
 
-module.exports = { createUser, findUserByEmail };
+const updateUser = async (userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image) => {
+  try {
+    // Check if user exists
+    const [user] = await db.promise().query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (user.length === 0) {
+      return false;
+    }
+
+    // Build update query dynamically
+    const updates = [];
+    const values = [];
+
+    if (name !== undefined) {
+      updates.push('user_name = ?');
+      values.push(name);
+    }
+    if (email !== undefined) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (password !== undefined && password !== null && password !== "") {
+      updates.push('password = ?');
+      values.push(password);
+    }
+    if (role !== undefined) {
+      updates.push('user_role = ?');
+      values.push(role);
+    }
+    if (role_expertIn !== undefined) {
+      updates.push('user_role_expertIn = ?');
+      values.push(role_expertIn);
+    }
+    if (role_businessTime !== undefined) {
+      updates.push('user_role_businessTime = ?');
+      values.push(role_businessTime);
+    }
+    if (role_laundromatsCount !== undefined) {
+      updates.push('user_role_laundromatsCount = ?');
+      values.push(role_laundromatsCount);
+    }
+    if (user_image !== undefined) {
+      updates.push('user_image = ?');
+      values.push(user_image);
+    }
+
+    if (updates.length === 0) {
+      return { success: false, message: 'No updates provided' };
+    }
+
+    values.push(userId);
+
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+    const [result] = await db.promise().query(query, values);
+
+    return result.affectedRows > 0 ? true : false;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return { success: false, message: 'Internal server error' };
+  }
+};
+
+module.exports = { createUser, findUserByEmail, updateUser };
