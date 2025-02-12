@@ -45,6 +45,18 @@ const checkUserEmailExists = async (email) => {
   return rows.length > 0 ? rows[0].user_id : null; // Return user_id if found, otherwise null
 };
 
+// Delete user by ID
+const deleteUserById = async (user_id) => {
+  const query = `DELETE FROM users WHERE id = ?`;
+
+  try {
+    const [result] = await db.promise().query(query, [user_id]);
+    return result.affectedRows > 0; // Returns true if a row was deleted, false otherwise
+  } catch (error) {
+    throw error;
+  }
+};
 
 
-module.exports = { getAllUsers, fetchUserDataById, checkUserEmailExists };
+
+module.exports = { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById };
