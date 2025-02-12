@@ -18,6 +18,7 @@ const fetchUserDataById = async (user_id) => {
       user_role_expertIn,
       user_role_businessTime,
       user_role_laundromatsCount,
+      user_image,
       created_at,
       updated_at
     FROM 
