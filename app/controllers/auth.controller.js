@@ -4,7 +4,7 @@ const { findUserByEmail, createUser, updateUser } = require('../models/auth.mode
 
 // SignUp function
 const signUp = async (req, res) => {
-  const { name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount } = req.body;
+  const { name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, addresss, phoneNumber } = req.body;
 
   try {
     // Check if user already exists
@@ -19,7 +19,7 @@ const signUp = async (req, res) => {
     const level = '1';
 
     // Create the user and get the new user ID
-    const userId = await createUser(name, email, hashedPassword, role, level, role_expertIn, role_businessTime, role_laundromatsCount);
+    const userId = await createUser(name, email, hashedPassword, role, level, role_expertIn, role_businessTime, role_laundromatsCount, addresss, phoneNumber);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -80,7 +80,7 @@ const signIn = async (req, res) => {
 
 // Update User function (POST request)
 const updateUserProfile = async (req, res) => {
-  const { userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image } = req.body;
+  const { userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image, address, phonenumber } = req.body;
 
   try {
     // Hash password if provided
@@ -90,7 +90,7 @@ const updateUserProfile = async (req, res) => {
     }
 
     // Update user details
-    const updated = await updateUser(userId, name, email, hashedPassword, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image);
+    const updated = await updateUser(userId, name, email, hashedPassword, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image, address, phonenumber);
 
     if (updated) {
       res.status(200).json({ message: 'User profile updated successfully' });

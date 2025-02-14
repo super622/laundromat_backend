@@ -20,7 +20,9 @@ const fetchUserDataById = async (user_id) => {
       user_role_laundromatsCount,
       user_image,
       created_at,
-      updated_at
+      updated_at,
+      user_address,
+      user_phonenumber
     FROM 
       users
     WHERE 

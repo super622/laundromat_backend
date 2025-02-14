@@ -7,15 +7,15 @@ const findUserByEmail = async (email) => {
 };
 
 // Create a new user and return the inserted user ID
-const createUser = async (name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount) => {
+const createUser = async (name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount, address, phoneNumber) => {
   const [result] = await db.promise().query(
-    'INSERT INTO users (user_name, email, password, user_role, level, user_role_expertIn, user_role_businessTime, user_role_laundromatsCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount]
+    'INSERT INTO users (user_name, email, password, user_role, level, user_role_expertIn, user_role_businessTime, user_role_laundromatsCount, user_address, user_phonenumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, email, password, role, level, role_expertIn, role_businessTime, role_laundromatsCount, address, phoneNumber]
   );
   return result.insertId; // Return the ID of the newly inserted user
 };
 
-const updateUser = async (userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image) => {
+const updateUser = async (userId, name, email, password, role, role_expertIn, role_businessTime, role_laundromatsCount, user_image, address, phoneNumber) => {
   try {
     // Check if user exists
     const [user] = await db.promise().query('SELECT * FROM users WHERE id = ?', [userId]);
@@ -58,6 +58,16 @@ const updateUser = async (userId, name, email, password, role, role_expertIn, ro
     if (user_image !== undefined) {
       updates.push('user_image = ?');
       values.push(user_image);
+    }
+
+    if (address !== undefined) {
+      updates.push('user_address = ?');
+      values.push(address);
+    }
+
+    if (phoneNumber !== undefined) {
+      updates.push('user_phonenumber = ?');
+      values.push(phoneNumber);
     }
 
     if (updates.length === 0) {
