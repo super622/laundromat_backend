@@ -103,7 +103,7 @@ const {
       await insertAnswer({
         question_id: questionId,
         answer,
-        user_id: 0,
+        user_id: userID,
         is_who : "AI"
       });
   
@@ -158,7 +158,7 @@ const {
   const createOrUpdateAnswerController = async (req, res) => {
     const { question_id, user_id, answer, isWho } = req.body;
   
-    if (!question_id || !user_id || !answer) {
+    if (!question_id || !user_id || !answer || !isWho) {
       return res.status(400).json({ message: "Missing required fields." });
     }
   
@@ -169,8 +169,8 @@ const {
           message: result === "insert"
             ? "Answer created successfully."
             : "Answer updated successfully.",
-          created: !!result,
-          updated: !result,
+          created: result === "insert",
+          updated: result !== "insert",
         });
       } else {
         return res.status(500).json({ message: "Failed to create or update the answer." });

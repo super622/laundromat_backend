@@ -146,12 +146,21 @@ const createOrUpdateAnswer = async (data) => {
   try {
     const [rows] = await db.promise().query('SELECT * FROM answers WHERE question_id = ? and user_id = ?', [question_id, user_id]);
     if (rows.length > 0) {
-      await db.promise().query(
-        'UPDATE answers SET answer = ?, isWho = ?, updated_at = NOW() WHERE question_id = ? AND user_id = ?',
-        [answer, isWho, question_id, user_id]
-      );
-
-      return "updated";
+      if (rows[0].isWho === "AI") {
+        await db.promise().query(
+          'INSERT INTO answers (question_id, user_id, answer, isWho, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
+          [question_id, user_id, answer, isWho]
+        );
+  
+        return "insert";
+      } else {
+        await db.promise().query(
+          'UPDATE answers SET answer = ?, isWho = ?, updated_at = NOW() WHERE question_id = ? AND user_id = ?',
+          [answer, isWho, question_id, user_id]
+        );
+  
+        return "updated";
+      }
     } else  {
       await db.promise().query(
         'INSERT INTO answers (question_id, user_id, answer, isWho, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
