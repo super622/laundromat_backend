@@ -103,7 +103,7 @@ const {
       await insertAnswer({
         question_id: questionId,
         answer,
-        user_id: userID,
+        user_id: 0,
         is_who : "AI"
       });
   
