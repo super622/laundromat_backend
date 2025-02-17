@@ -519,6 +519,22 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
   return Object.values(questionsMap);
 };
 
+const updateQuestionanswerSolved = async (answerId, status) => {
+  const [rows] = await db.promise().query("SELECT * FROM answers WHERE id = ?", [answerId]);
+  if (rows.length > 0) {
+    await db.promise().query(
+      'UPDATE answers SET solved_state = ? WHERE id = ?',
+      [status ? "Solved": "", answerId]
+    );
+    await db.promise().query(
+      'UPDATE questions SET solved_state = ? WHERE id = ?',
+      [status ? "Solved": "", rows[0].question_id]
+    );
+    return "updated";
+  } else {
+    return "Not found"
+  }
+};
 
 module.exports = {
   createQuestion,
@@ -529,5 +545,6 @@ module.exports = {
   createOrUpdateAnswer,
   getAllQuestionsWithAnswersByID,
   getAllQuestionsWithAnswersBySearch,
-  getAllQuestionsWithAnswersBySearchByUserId
+  getAllQuestionsWithAnswersBySearchByUserId,
+  updateQuestionanswerSolved
 };

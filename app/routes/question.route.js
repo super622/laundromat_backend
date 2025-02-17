@@ -9,7 +9,8 @@ const {
   createOrUpdateAnswerController,
   getQuestionsWithAnswersById,
   getQuestionsWithSearchByID,
-  getQuestionsWithSearch
+  getQuestionsWithSearch,
+  updateSolvedStatus
 } = require('../controllers/question.controller');
 
 router.get('/allquestionwithanswer', getQuestionsWithAnswers);
@@ -20,5 +21,6 @@ router.delete('/:id', deleteExistingQuestion); // DELETE a question
 router.get('/allquestionwithanswerbyid/:user_id', getQuestionsWithAnswersById);
 router.post('/searchmyquestion', getQuestionsWithSearchByID);
 router.post('/searchquestion', getQuestionsWithSearch);
+router.post('/updateSolvedStatus', updateSolvedStatus);
 
 module.exports = router;

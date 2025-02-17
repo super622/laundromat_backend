@@ -7,7 +7,8 @@ const {
     createOrUpdateAnswer,
     getAllQuestionsWithAnswersByID,
     getAllQuestionsWithAnswersBySearch,
-    getAllQuestionsWithAnswersBySearchByUserId  
+    getAllQuestionsWithAnswersBySearchByUserId,
+    updateQuestionanswerSolved
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
@@ -317,6 +318,26 @@ const createNewQuestion = async (req, res) => {
     }
   };
   
+  const updateSolvedStatus = async (req, res) => {
+    try {
+      const { answerId, status } = req.body;
+  
+      if (!answerId) {
+        return res.status(400).json({ message: 'Answer Id is required' });
+      }
+
+      const response = await updateQuestionanswerSolved(answerId, status);
+
+      res.status(200).json({
+        message: response
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Server error',
+        error: error.message,
+      });
+    }
+  };
   
   module.exports = {
     getQuestionsWithAnswers,
@@ -326,6 +347,7 @@ const createNewQuestion = async (req, res) => {
     createOrUpdateAnswerController,
     getQuestionsWithAnswersById,
     getQuestionsWithSearchByID,
-    getQuestionsWithSearch
+    getQuestionsWithSearch,
+    updateSolvedStatus
   };
   
