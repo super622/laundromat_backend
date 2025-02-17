@@ -33,92 +33,160 @@ const {
   };
 
   // Create a new question
-  const createNewQuestion = async (req, res) => {
-    const {
+  // const createNewQuestion = async (req, res) => {
+  //   const {
+  //     userID,
+  //     question,
+  //     brand,
+  //     serial_number,
+  //     pounds,
+  //     year,
+  //     category,
+  //     tags,
+  //     file,
+  //     image,
+  //   } = req.body;
+  
+  //   // Validate required fields
+  //   const missingFields = [];
+  //   if (!userID) missingFields.push('userID');
+  //   if (!question) missingFields.push('question');
+  //   if (!brand) missingFields.push('brand');
+  //   if (!serial_number) missingFields.push('serial_number');
+  //   if (!pounds) missingFields.push('pounds');
+  //   if (!year) missingFields.push('year');
+  //   if (!category) missingFields.push('category');
+  //   if (!tags) missingFields.push('tags');
+  
+  //   if (missingFields.length > 0) {
+  //     return res.status(400).json({
+  //       message: 'Validation error',
+  //       missingFields,
+  //     });
+  //   }
+  
+  //   try {
+  //     // Create the question and get the new question ID
+  //     const questionId = await createQuestion({
+  //       userID,
+  //       question,
+  //       brand,
+  //       serial_number,
+  //       pounds,
+  //       year,
+  //       category,
+  //       tags,
+  //       file,
+  //       image,
+  //     });
+  
+  //     // Generate an answer using GPT
+  //     const gptResponse = await openai.chat.completions.create({
+  //       model: 'gpt-4o-mini', // Use the appropriate model
+  //       messages: [
+  //         { 
+  //           role: 'system', 
+  //           content: 'You are an expert in the laundry business, including operations, equipment, customer service, and best practices. Your responses should be tailored to the laundry industry and limited to 5 concise sentences.'
+  //         },
+  //         { 
+  //           role: 'user', 
+  //           content: `Provide a detailed answer for the following question related to the laundry business: "${question}"`
+  //         },
+  //       ],
+  //       max_tokens: 200, // Adjust token limit to control response length (e.g., ~50 tokens per sentence)
+  //     });
+
+  //     const answer = gptResponse.choices[0].message.content.trim();
+
+  
+  //     // Insert the GPT-generated answer into the answers table
+  //     await insertAnswer({
+  //       question_id: questionId,
+  //       answer,
+  //       user_id: userID,
+  //       is_who : "AI"
+  //     });
+  
+  //     res.status(201).json({
+  //       message: 'Question and answer created successfully',
+  //       questionId,
+  //       answer,
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({
+  //       message: 'Server error',
+  //       error: error.message,
+  //     });
+  //   }
+  // };
+
+
+  // Create a new question
+const createNewQuestion = async (req, res) => {
+  const { userID, question, brand, serial_number, pounds, year, category, tags, file, image } = req.body;
+
+  // Validate required fields
+  if (!userID || !question) {
+    return res.status(400).json({
+      message: 'Validation error',
+      missingFields: !userID ? 'userID' : 'question',
+    });
+  }
+
+  try {
+    // Create the question and get the new question ID
+    const questionId = await createQuestion({
       userID,
       question,
-      brand,
-      serial_number,
-      pounds,
-      year,
-      category,
-      tags,
+      brand: brand || " ",
+      serial_number: serial_number || " ",
+      pounds: pounds || " ",
+      year: year || " ",
+      category: category || " ",
+      tags: tags || " ",
       file,
       image,
-    } = req.body;
-  
-    // Validate required fields
-    const missingFields = [];
-    if (!userID) missingFields.push('userID');
-    if (!question) missingFields.push('question');
-    if (!brand) missingFields.push('brand');
-    if (!serial_number) missingFields.push('serial_number');
-    if (!pounds) missingFields.push('pounds');
-    if (!year) missingFields.push('year');
-    if (!category) missingFields.push('category');
-    if (!tags) missingFields.push('tags');
-  
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        message: 'Validation error',
-        missingFields,
-      });
-    }
-  
-    try {
-      // Create the question and get the new question ID
-      const questionId = await createQuestion({
-        userID,
-        question,
-        brand,
-        serial_number,
-        pounds,
-        year,
-        category,
-        tags,
-        file,
-        image,
-      });
-  
-      // Generate an answer using GPT
-      const gptResponse = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', // Use the appropriate model
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are an expert in the laundry business, including operations, equipment, customer service, and best practices. Your responses should be tailored to the laundry industry and limited to 5 concise sentences.'
-          },
-          { 
-            role: 'user', 
-            content: `Provide a detailed answer for the following question related to the laundry business: "${question}"`
-          },
-        ],
-        max_tokens: 200, // Adjust token limit to control response length (e.g., ~50 tokens per sentence)
-      });
+    });
 
-      const answer = gptResponse.choices[0].message.content.trim();
+    // Generate an answer using GPT
+    const gptResponse = await openai.chat.completions.create({
+      model: 'gpt-4o-mini', // Use the appropriate model
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are an expert in the laundry business, including operations, equipment, customer service, and best practices. Your responses should be tailored to the laundry industry and limited to 5 concise sentences.'
+        },
+        { 
+          role: 'user', 
+          content: `Provide a detailed answer for the following question related to the laundry business: "${question}"`
+        },
+      ],
+      max_tokens: 200, // Adjust token limit to control response length (e.g., ~50 tokens per sentence)
+    });
 
-  
-      // Insert the GPT-generated answer into the answers table
-      await insertAnswer({
-        question_id: questionId,
-        answer,
-        user_id: userID,
-        is_who : "AI"
-      });
-  
-      res.status(201).json({
-        message: 'Question and answer created successfully',
-        questionId,
-        answer,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: 'Server error',
-        error: error.message,
-      });
-    }
-  };
+    const answer = gptResponse.choices[0].message.content.trim();
+
+    // Insert the GPT-generated answer into the answers table
+    await insertAnswer({
+      question_id: questionId,
+      answer,
+      user_id: userID,
+      is_who: "AI",
+    });
+
+    res.status(201).json({
+      message: 'Question and answer created successfully',
+      questionId,
+      answer,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
   
   // Update a question by ID
   const updateExistingQuestion = async (req, res) => {
