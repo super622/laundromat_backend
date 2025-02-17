@@ -16,6 +16,7 @@ const getAllQuestionsWithAnswers = async () => {
       q.tags, 
       q.created_at AS question_created_at, 
       q.updated_at AS question_updated_at,
+      q.solved_state,
       q.user_id AS question_user_id, 
       qu.user_name AS question_user_name, 
       qu.email AS question_user_email, 
@@ -32,7 +33,8 @@ const getAllQuestionsWithAnswers = async () => {
             'answer_user_name', au.user_name,
             'created_at', a.created_at,
             'updated_at', a.updated_at,
-            'isWho', a.isWho
+            'isWho', a.isWho,
+            'solved_state', a.solved_state
           )
         ), '[]'
       ) AS answers
@@ -75,6 +77,7 @@ const getAllQuestionsWithAnswers = async () => {
         tags: row.tags,
         created_at: row.question_created_at,
         updated_at: row.question_updated_at,
+        solved_state: row.solved_state,
         user: row.question_user_id
           ? {
               user_id: row.question_user_id,
@@ -197,20 +200,29 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       q.tags, 
       q.created_at AS question_created_at, 
       q.updated_at AS question_updated_at,
+      q.solved_state,
       q.user_id AS question_user_id, 
       qu.user_name AS question_user_name, 
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      a.id AS answer_id, 
-      a.answer, 
-      a.user_id AS answer_user_id, 
-      au.user_name AS answer_user_name, 
-      a.created_at AS answer_created_at, 
-      a.updated_at AS answer_updated_at, 
-      a.isWho,
       COALESCE(likes.count, 0) AS likes_count,
-      COALESCE(dislikes.count, 0) AS dislikes_count
+      COALESCE(dislikes.count, 0) AS dislikes_count,
+      COALESCE(
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'answer_id', a.id,
+            'answer', a.answer,
+            'answer_user_id', a.user_id,
+            'answer_user_name', au.user_name,
+            'answer_created_at', a.created_at,
+            'answer_updated_at', a.updated_at,
+            'isWho', a.isWho,
+            'solved_state', a.solved_state
+          )
+        ),
+        JSON_ARRAY()
+      ) AS answers
     FROM 
       questions q
     LEFT JOIN 
@@ -221,21 +233,22 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       users au ON a.user_id = au.id
     LEFT JOIN (
       SELECT question_id, COUNT(*) AS count
-      FROM likes_and_dislikes
-      WHERE type = 1
-      GROUP BY question_id
-    ) likes ON q.id = likes.question_id
+        FROM likes_and_dislikes
+        WHERE type = 1
+        GROUP BY question_id
+      ) likes ON q.id = likes.question_id
     LEFT JOIN (
       SELECT question_id, COUNT(*) AS count
-      FROM likes_and_dislikes
-      WHERE type = 0
-      GROUP BY question_id
-    ) dislikes ON q.id = dislikes.question_id
+        FROM likes_and_dislikes
+        WHERE type = 0
+        GROUP BY question_id
+      ) dislikes ON q.id = dislikes.question_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
-          SELECT 1 FROM answers WHERE answers.question_id = q.id AND answers.user_id != ?
+        SELECT 1 FROM answers WHERE answers.question_id = q.id AND answers.user_id != ?
       ))
-    ORDER BY q.id DESC;    
+    GROUP BY q.id
+    ORDER BY q.id DESC;   
   `;
 
   const [rows] = await db.promise().query(query, [user_id, user_id, user_id]);
@@ -259,6 +272,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
         tags: row.tags,
         created_at: row.question_created_at,
         updated_at: row.question_updated_at,
+        solved_state: row.solved_state,
         user: row.question_user_id
           ? {
               user_id: row.question_user_id,
@@ -270,20 +284,8 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
           : null,
         likes_count: row.likes_count || 0,
         dislikes_count: row.dislikes_count || 0,
-        answers: [],
+        answers: row.answers,
       };
-    }
-
-    if (row.answer_id) {
-      questionsMap[index].answers.push({
-        answer_id: row.answer_id,
-        answer: row.answer,
-        user_id: row.answer_user_id,
-        user_name: row.answer_user_name,
-        created_at: row.answer_created_at,
-        updated_at: row.answer_updated_at,
-        isWho: row.isWho,
-      });
     }
   });
 
