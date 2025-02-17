@@ -14,6 +14,7 @@ const getAllQuestionsWithAnswers = async () => {
       q.file, 
       q.image, 
       q.tags, 
+      q.tip_amount,
       q.created_at AS question_created_at, 
       q.updated_at AS question_updated_at,
       q.solved_state,
@@ -78,6 +79,7 @@ const getAllQuestionsWithAnswers = async () => {
         created_at: row.question_created_at,
         updated_at: row.question_updated_at,
         solved_state: row.solved_state,
+        tip_amount: row.tip_amount,
         user: row.question_user_id
           ? {
               user_id: row.question_user_id,
@@ -203,6 +205,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       q.created_at AS question_created_at, 
       q.updated_at AS question_updated_at,
       q.solved_state,
+      q.tip_amount,
       q.user_id AS question_user_id, 
       qu.user_name AS question_user_name, 
       qu.email AS question_user_email, 
@@ -275,6 +278,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
         created_at: row.question_created_at,
         updated_at: row.question_updated_at,
         solved_state: row.solved_state,
+        tip_amount: row.tip_amount,
         user: row.question_user_id
           ? {
               user_id: row.question_user_id,
