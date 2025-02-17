@@ -124,7 +124,7 @@ const {
 
   // Create a new question
 const createNewQuestion = async (req, res) => {
-  const { userID, question, brand, serial_number, pounds, year, category, tags, file, image } = req.body;
+  const { userID, question, brand, serial_number, pounds, year, category, tags, file, image, tip_amount, solved_state } = req.body;
 
   // Validate required fields
   if (!userID || !question) {
@@ -139,14 +139,16 @@ const createNewQuestion = async (req, res) => {
     const questionId = await createQuestion({
       userID,
       question,
-      brand: brand || " ",
-      serial_number: serial_number || " ",
-      pounds: pounds || " ",
-      year: year || " ",
-      category: category || " ",
-      tags: tags || " ",
+      brand: brand || "",
+      serial_number: serial_number || "",
+      pounds: pounds || "",
+      year: year || "",
+      category: category || "",
+      tags: tags || "",
       file,
       image,
+      tip_amount: tip_amount || "",
+      solved_state: solved_state || ""
     });
 
     // Generate an answer using GPT

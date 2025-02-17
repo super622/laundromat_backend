@@ -4,7 +4,7 @@
  */
 exports.up = function(knex) {
     return knex.schema.table("answers", table => {
-        table.string('solved_state').notNullable();
+        table.string('solved_state').nullable();
     })
 };
   

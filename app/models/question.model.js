@@ -109,12 +109,14 @@ const createQuestion = async (questionData) => {
     tags,
     file,
     image,
+    tip_amount,
+    solved_state
   } = questionData;
 
   // Insert question and return the insertId
   const [result] = await db.promise().query(
-    'INSERT INTO questions (user_id, question, brand, serial_number, pounds, year, category, file, image, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [userID, question, brand, serial_number, pounds, year, category, file, image, tags]
+    'INSERT INTO questions (user_id, question, brand, serial_number, pounds, year, category, file, image, tags, tip_amount, solved_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [userID, question, brand, serial_number, pounds, year, category, file, image, tags, tip_amount, solved_state]
   );
 
   return result.insertId; // Return the ID of the newly inserted question
