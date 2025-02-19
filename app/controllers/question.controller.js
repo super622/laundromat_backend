@@ -10,7 +10,8 @@ const {
     getAllQuestionsWithAnswersByID,
     getAllQuestionsWithAnswersBySearch,
     getAllQuestionsWithAnswersBySearchByUserId,
-    updateQuestionanswerSolved
+    updateQuestionanswerSolved,
+    createAnswer
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
@@ -268,6 +269,25 @@ const updateAnswer = async (req, res) => {
     }
   };
 
+  const createAnswerController = async (req, res) => {
+    const { question_id, user_id, answer, isWho } = req.body;
+  
+    if (!question_id || !user_id || !answer || !isWho) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+  
+    try {
+      const result = await createAnswer({ question_id, user_id, answer, isWho });
+      if (result) {
+        return res.status(201).json({ message: "Answer created successfully.", created: true });
+      } else {
+        return res.status(500).json({ message: "Failed to create the answer." });
+      }
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
   const getQuestionsWithAnswersById = async (req, res) => {
     try {
       const { user_id } = req.params; // Get user_id from request parameters
@@ -368,6 +388,7 @@ const updateAnswer = async (req, res) => {
     getQuestionsWithSearchByID,
     getQuestionsWithSearch,
     updateSolvedStatus,
-    updateAnswer
+    updateAnswer,
+    createAnswerController
   };
   
