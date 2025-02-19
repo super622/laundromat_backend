@@ -32,6 +32,7 @@ const getAllQuestionsWithAnswers = async () => {
             'answer', a.answer,
             'answer_user_id', a.user_id,
             'answer_user_name', au.user_name,
+            'answer_user_image', au.user_image,
             'created_at', a.created_at,
             'updated_at', a.updated_at,
             'isWho', a.isWho,
@@ -134,6 +135,29 @@ const insertAnswer = async (answerData) => {
   );
 };
 
+const getAnswerById = async (id) => {
+  const [rows] = await db.promise().query('SELECT * FROM answers WHERE id = ?', [id]);
+  if (rows.length > 0) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const updateAnswers = async (id, updateData) => {
+  const queryParts = [];
+  const values = [];
+
+  for (const key in updateData) {
+    queryParts.push(`${key} = ?`);
+    values.push(updateData[key]);
+  }
+  values.push(id);
+
+  const query = `UPDATE answers SET ${queryParts.join(', ')} WHERE id = ?`;
+  await db.promise().query(query, values);
+};
+
 const createOrUpdateAnswer = async (data) => {
   const { question_id, user_id, answer, isWho } = data;
 
@@ -220,6 +244,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
             'answer', a.answer,
             'answer_user_id', a.user_id,
             'answer_user_name', au.user_name,
+            'answer_user_image', au.user_image,
             'answer_created_at', a.created_at,
             'answer_updated_at', a.updated_at,
             'isWho', a.isWho,
@@ -550,6 +575,8 @@ module.exports = {
   deleteQuestion,
   insertAnswer,
   getAllQuestionsWithAnswers,
+  getAnswerById,
+  updateAnswers,
   createOrUpdateAnswer,
   getAllQuestionsWithAnswersByID,
   getAllQuestionsWithAnswersBySearch,

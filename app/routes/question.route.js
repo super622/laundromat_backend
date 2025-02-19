@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createNewQuestion,
   updateExistingQuestion,
+  updateAnswer,
   deleteExistingQuestion,
   getQuestionsWithAnswers,
   createOrUpdateAnswerController,
@@ -22,5 +23,6 @@ router.get('/allquestionwithanswerbyid/:user_id', getQuestionsWithAnswersById);
 router.post('/searchmyquestion', getQuestionsWithSearchByID);
 router.post('/searchquestion', getQuestionsWithSearch);
 router.post('/updateSolvedStatus', updateSolvedStatus);
+router.put('/updateAnswer/:id', updateAnswer);
 
 module.exports = router;

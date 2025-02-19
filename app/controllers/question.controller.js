@@ -3,6 +3,8 @@ const {
     updateQuestion,
     deleteQuestion,
     insertAnswer,
+    updateAnswers,
+    getAnswerById,
     getAllQuestionsWithAnswers,
     createOrUpdateAnswer,
     getAllQuestionsWithAnswersByID,
@@ -190,6 +192,22 @@ const createNewQuestion = async (req, res) => {
   }
 };
 
+const updateAnswer = async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const answer = await getAnswerById(id);
+    if (!answer) {
+      return res.status(404).json({ message: 'Answer not found' });
+    }
+
+    await updateAnswers(id, updateData);
+    res.status(200).json({ message: 'Answer updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
   
   // Update a question by ID
   const updateExistingQuestion = async (req, res) => {
@@ -350,6 +368,7 @@ const createNewQuestion = async (req, res) => {
     getQuestionsWithAnswersById,
     getQuestionsWithSearchByID,
     getQuestionsWithSearch,
-    updateSolvedStatus
+    updateSolvedStatus,
+    updateAnswer
   };
   
