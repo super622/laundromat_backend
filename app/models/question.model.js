@@ -144,18 +144,9 @@ const getAnswerById = async (id) => {
   }
 };
 
-const updateAnswers = async (id, updateData) => {
-  const queryParts = [];
-  const values = [];
-
-  for (const key in updateData) {
-    queryParts.push(`${key} = ?`);
-    values.push(updateData[key]);
-  }
-  values.push(id);
-
-  const query = `UPDATE answers SET ${queryParts.join(', ')} WHERE id = ?`;
-  await db.promise().query(query, values);
+const updateAnswers = async (id, answer) => {
+  const query = `UPDATE answers SET answer = ? WHERE id = ?`;
+  await db.promise().query(query, [answer, id]);
 };
 
 const createOrUpdateAnswer = async (data) => {

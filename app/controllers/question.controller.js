@@ -193,16 +193,15 @@ const createNewQuestion = async (req, res) => {
 };
 
 const updateAnswer = async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body;
+  const { id, answer } = req.body;
 
   try {
-    const answer = await getAnswerById(id);
-    if (!answer) {
+    const exist = await getAnswerById(id);
+    if (!exist) {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
-    await updateAnswers(id, updateData);
+    await updateAnswers(id, answer);
     res.status(200).json({ message: 'Answer updated successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

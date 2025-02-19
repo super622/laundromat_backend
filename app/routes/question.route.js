@@ -23,6 +23,6 @@ router.get('/allquestionwithanswerbyid/:user_id', getQuestionsWithAnswersById);
 router.post('/searchmyquestion', getQuestionsWithSearchByID);
 router.post('/searchquestion', getQuestionsWithSearch);
 router.post('/updateSolvedStatus', updateSolvedStatus);
-router.put('/updateAnswer/:id', updateAnswer);
+router.post('/updateAnswer', updateAnswer);
 
 module.exports = router;
