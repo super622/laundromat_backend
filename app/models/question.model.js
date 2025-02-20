@@ -249,7 +249,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
     LEFT JOIN 
       users qu ON q.user_id = qu.id
     LEFT JOIN 
-      answers a ON q.id = a.question_id AND a.user_id = ?
+      answers a ON q.id = a.question_id
     LEFT JOIN 
       users au ON a.user_id = au.id
     LEFT JOIN (
@@ -266,7 +266,7 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       ) dislikes ON q.id = dislikes.question_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
-        SELECT 1 FROM answers WHERE answers.question_id = q.id AND answers.user_id != ?
+        SELECT 1 FROM answers WHERE answers.question_id = q.id
       ))
     GROUP BY q.id
     ORDER BY q.id DESC;   
