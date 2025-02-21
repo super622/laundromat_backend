@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { signUp, signIn, updateUserProfile } = require('../controllers/auth.controller');
+const { signUp, signIn, updateUserProfile, requestVerifyCode, verifyCode } = require('../controllers/auth.controller');
 const router = express.Router();
 
 // POST: SignUp
@@ -39,6 +39,8 @@ router.post(
   signIn
 );
 
+router.post('/verifyCode', verifyCode);
+router.post('/requestVerifyCode', requestVerifyCode);
 router.post('/update', updateUserProfile);
 
 module.exports = router;

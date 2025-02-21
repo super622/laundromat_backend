@@ -3,8 +3,8 @@
  * @returns { Promise<void> }
  */
 exports.up = function(knex) {
-    return knex.schema.table("questions", table => {
-        table.string('tip_amount').nullable();
+    return knex.schema.table("users", table => {
+        table.text('fcm_token').nullable();
     })
 };
   
@@ -14,7 +14,7 @@ exports.up = function(knex) {
    * @returns { Promise<void> }
    */
   exports.down = function(knex) {
-    return knex.schema.table("questions", table => {
-        table.dropColumn('tip_amount');
+    return knex.schema.table("users", table => {
+        table.dropColumn('fcm_token');
     })
 };

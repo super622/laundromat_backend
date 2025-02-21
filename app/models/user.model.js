@@ -59,6 +59,86 @@ const deleteUserById = async (user_id) => {
   }
 };
 
+const updateUserToken = async (email, token) => {
+  const [result] = await db.promise().query(
+    'UPDATE users SET fcm_token = ? WHERE email = ?',
+    [token, email]
+  );
+};
 
+const getAllMemberFCMTokens = async (user_id) => {
+  const query = `
+    SELECT fcm_token 
+    FROM users 
+    WHERE fcm_token IS NOT NULL;
+  `;
 
-module.exports = { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById };
+  // const query = `
+  //   SELECT fcm_token 
+  //   FROM users 
+  //   WHERE fcm_token IS NOT NULL AND id != ?;
+  // `;
+
+  try {
+    const [rows] = await db.promise().query(query);
+    // const [rows] = await db.promise().query(query, [user_id]);
+    const fcmTokens = rows.map(row => row.fcm_token);
+    
+    return fcmTokens;
+  } catch (error) {
+    console.error("Error fetching FCM tokens:", error);
+    return [];
+  }
+};
+
+const getFCMToken = async (user_id) => {
+  const query = `
+    SELECT 
+      fcm_token
+    FROM 
+      users
+    WHERE 
+      id = ?;
+  `;
+
+  const [rows] = await db.promise().query(query, [user_id]);
+  return rows.length > 0 ? rows[0].fcm_token : null;
+};
+
+const fetchUserDataByQuestionId = async (question_id) => {
+  const questionQuery = `
+    SELECT
+      user_id
+    FROM
+      questions
+    WHERE
+      id = ?;
+  `;
+  const userQuery = `
+    SELECT 
+      id AS user_id,
+      user_name,
+      email,
+      password,
+      level,
+      user_role,
+      user_role_expertIn,
+      user_role_businessTime,
+      user_role_laundromatsCount,
+      user_image,
+      created_at,
+      updated_at,
+      user_address,
+      user_phonenumber
+    FROM 
+      users
+    WHERE 
+      id = ?;
+  `;
+
+  const [question] = await db.promise().query(questionQuery, [question_id]);
+  const [user] = await db.promise().query(userQuery, [question[0].user_id]);
+  return user.length > 0 ? user[0] : null;
+};
+
+module.exports = { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken, getAllMemberFCMTokens, getFCMToken, fetchUserDataByQuestionId };

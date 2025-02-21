@@ -1,4 +1,5 @@
-const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById  } = require('../models/user.model');
+const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken  } = require('../models/user.model');
+const { sendNotification, sendNotificationToMultipleUsers } = require('../utils/FirebaseService');
 
 // Get all users
 const fetchUsers = (req, res) => {
@@ -92,5 +93,34 @@ const deleteUserAccount = async (req, res) => {
   }
 };
 
+const saveFCMToken = async (req, res) => {
+  try {
+    const { email, token } = req.body; // Get email from request body
 
-module.exports = { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount };
+    if (!email || !token) {
+      return res.status(400).json({ message: "Email and Token is required" });
+    }
+
+    const userId = await checkUserEmailExists(email);
+
+    if (userId) {
+      await updateUserToken(email, token);
+      return res.status(200).json({ message: "Token Updated!" });
+    } else {
+      return res.status(404).json({ message: "User does not exist" });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+const sendNotifications = async (req, res) => {
+  await sendNotification("dTYSMVOGQhWJ9vJxlNKgtb:APA91bFFdbO6d5dK5C76ndsEGlJzbUo5uZZ1qgPw_57uByxqVAbpxXMHqOn1WshQsf8yJsN2nBwfNy63TaRFBNPnhOELJaGLFgRYfFKxNapVY-73QpHE2o8", "New Notification", "This is test notification");
+  // await sendNotificationToMultipleUsers([""], "Multi Notification", "This is multi notification");
+  return res.status(200).json({ message: "Sent!" });
+};
+
+module.exports = { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount, saveFCMToken, sendNotifications };

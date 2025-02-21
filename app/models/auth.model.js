@@ -1,5 +1,13 @@
 const db = require('../config/db');
 
+const updateUserVerifyCode = async (email, verifyCode) => {
+  const verifyPhoneTime = Math.floor(Date.now() / 1000) + 600;
+  const [result] = await db.promise().query(
+    'UPDATE users SET user_verifycode = ?, user_verifyTime = ? WHERE email = ?',
+    [verifyCode, verifyPhoneTime, email]
+  );
+};
+
 // Find user by email
 const findUserByEmail = async (email) => {
   const [user] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
@@ -86,4 +94,4 @@ const updateUser = async (userId, name, email, password, role, role_expertIn, ro
   }
 };
 
-module.exports = { createUser, findUserByEmail, updateUser };
+module.exports = { updateUserVerifyCode, createUser, findUserByEmail, updateUser, updateUserVerifyCode };

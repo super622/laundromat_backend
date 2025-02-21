@@ -1,6 +1,82 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { findUserByEmail, createUser, updateUser } = require('../models/auth.model');
+const { findUserByEmail, createUser, updateUser, updateUserVerifyCode } = require('../models/auth.model');
+const phoneSms = require('../utils/SMSService');
+
+const generateVerificationCode = (length = 6) => {
+  let code = "";
+  for (let i = 0; i < length; i++) {
+      code += Math.floor(Math.random() * 10);
+  }
+  return code;
+}
+
+const verifyCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!code || !email) {
+      return res.status(400).json({ message: 'Code and Email is required' });
+    }
+
+    const existingUser = await findUserByEmail(email);
+    if (!existingUser) {
+      res.status(404).json({ message: "User Not Found! Please Register First." });
+    }
+
+    const verifyTime = Math.floor(Date.now() / 1000);
+
+    if (verifyTime > parseInt(existingUser.user_verifyTime)) {
+      res.status(401).json({message: "This verifyCode is expired. Please regenerate code!"})
+    } else {
+      if (existingUser.user_verifycode == code) {
+        res.status(200).json({message: "Success to verify code."});
+      } else {
+        res.status(401).json({message: "Invalid verification code."});
+      }
+    }
+  } catch (e) {
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
+const requestVerifyCode = async (req, res) => {
+  try {
+    const { phone, email } = req.body;
+    if (!phone || !email) {
+      return res.status(400).json({ message: 'Phone number and Email is required' });
+    }
+
+    const phoneNumber = await phoneSms.checkPhoneNumber(phone);
+    if (!phoneNumber) {
+      return res.status(400).json({ message: "Invalid Phone Number" });
+    }
+
+    const existingUser = await findUserByEmail(email);
+    if (!existingUser) {
+      return res.status(404).json({ message: "User Not Found! Please Register First." });
+    }
+
+    const verifyCode = generateVerificationCode();
+
+    await updateUserVerifyCode(email, verifyCode);
+
+    const verifiedContent = `Your verification code is here: \n ${verifyCode}`;
+    await phoneSms.pushNotification(verifiedContent, phoneNumber);
+
+    res.status(200).json({
+      message: 'Verifycation code sent!',
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
 
 // SignUp function
 const signUp = async (req, res) => {
@@ -102,4 +178,4 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { signUp, signIn, updateUserProfile };
+module.exports = { verifyCode, signUp, signIn, updateUserProfile, requestVerifyCode };

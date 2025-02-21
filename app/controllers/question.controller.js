@@ -15,6 +15,8 @@ const {
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
+const { getAllMemberFCMTokens, fetchUserDataById, fetchUserDataByQuestionId } = require('../models/user.model');
+const { sendNotificationToMultipleUsers, sendNotification } = require('../utils/FirebaseService');
 
   // Initialize OpenAI (No `Configuration` class needed)
   const openai = new OpenAI({
@@ -180,6 +182,10 @@ const createNewQuestion = async (req, res) => {
       is_who: "AI",
     });
 
+    const tokens = await getAllMemberFCMTokens(userID);
+    const userInfo = await fetchUserDataById(userID);
+    await sendNotificationToMultipleUsers(tokens, "New Question", `${userInfo.user_name} has posted a new question.`);
+
     res.status(201).json({
       message: 'Question and answer created successfully',
       questionId,
@@ -279,6 +285,9 @@ const updateAnswer = async (req, res) => {
     try {
       const result = await createAnswer({ question_id, user_id, answer, isWho });
       if (result) {
+        const postUser = await fetchUserDataById(user_id);
+        const Owner = await fetchUserDataByQuestionId(question_id);
+        await sendNotification(Owner.fcm_token, "New Answer", `${postUser.user_name} answered your question.`)
         return res.status(201).json({ message: "Answer created successfully.", created: true });
       } else {
         return res.status(500).json({ message: "Failed to create the answer." });
