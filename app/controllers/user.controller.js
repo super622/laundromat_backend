@@ -118,7 +118,7 @@ const saveFCMToken = async (req, res) => {
 };
 
 const sendNotifications = async (req, res) => {
-  await sendNotification("dTYSMVOGQhWJ9vJxlNKgtb:APA91bFFdbO6d5dK5C76ndsEGlJzbUo5uZZ1qgPw_57uByxqVAbpxXMHqOn1WshQsf8yJsN2nBwfNy63TaRFBNPnhOELJaGLFgRYfFKxNapVY-73QpHE2o8", "New Notification", "This is test notification");
+  await sendNotification("e0DZW6FZw0n4mV35sEIXXl:APA91bGowvco0D--WLT3mGH8-tqV1ptXLzrcIEujiFfwHLKCR5ZkK5mMDjbG5gb-aGJtmXKVhNuzSXp-pfoZCVdsWxt8_6FkYPf2NxiUftNKckNB_m9CBo8", "New Notification", "This is test notification");
   // await sendNotificationToMultipleUsers([""], "Multi Notification", "This is multi notification");
   return res.status(200).json({ message: "Sent!" });
 };
