@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { findUserByEmail, createUser, updateUser, updateUserVerifyCode } = require('../models/auth.model');
 const phoneSms = require('../utils/SMSService');
+const { fetchUserDataById } = require('../models/user.model');
 
 const generateVerificationCode = (length = 6) => {
   let code = "";
@@ -13,13 +14,13 @@ const generateVerificationCode = (length = 6) => {
 
 const verifyCode = async (req, res) => {
   try {
-    const { email, code } = req.body;
+    const { userId, code } = req.body;
 
-    if (!code || !email) {
-      return res.status(400).json({ message: 'Code and Email is required' });
+    if (!code || !userId) {
+      return res.status(400).json({ message: 'Code and User Id is required' });
     }
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await fetchUserDataById(userId);
     if (!existingUser) {
       res.status(404).json({ message: "User Not Found! Please Register First." });
     }
@@ -45,9 +46,9 @@ const verifyCode = async (req, res) => {
 
 const requestVerifyCode = async (req, res) => {
   try {
-    const { phone, email } = req.body;
-    if (!phone || !email) {
-      return res.status(400).json({ message: 'Phone number and Email is required' });
+    const { phone, userId } = req.body;
+    if (!phone || !userId) {
+      return res.status(400).json({ message: 'Phone number and User Id is required' });
     }
 
     const phoneNumber = await phoneSms.checkPhoneNumber(phone);
@@ -55,14 +56,14 @@ const requestVerifyCode = async (req, res) => {
       return res.status(400).json({ message: "Invalid Phone Number" });
     }
 
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await fetchUserDataById(userId);
     if (!existingUser) {
       return res.status(404).json({ message: "User Not Found! Please Register First." });
     }
 
     const verifyCode = generateVerificationCode();
 
-    await updateUserVerifyCode(email, verifyCode, phoneNumber);
+    await updateUserVerifyCode(userId, verifyCode, phoneNumber);
 
     const verifiedContent = `Your verification code is here: \n ${verifyCode}`;
     await phoneSms.pushNotification(verifiedContent, phoneNumber);
