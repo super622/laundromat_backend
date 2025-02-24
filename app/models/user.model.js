@@ -22,7 +22,9 @@ const fetchUserDataById = async (user_id) => {
       created_at,
       updated_at,
       user_address,
-      user_phonenumber
+      user_phonenumber,
+      user_verifyTime,
+      user_verifycode
     FROM 
       users
     WHERE 
