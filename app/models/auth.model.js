@@ -1,10 +1,10 @@
 const db = require('../config/db');
 
-const updateUserVerifyCode = async (email, verifyCode) => {
+const updateUserVerifyCode = async (email, verifyCode, phoneNumber) => {
   const verifyPhoneTime = Math.floor(Date.now() / 1000) + 600;
   const [result] = await db.promise().query(
-    'UPDATE users SET user_verifycode = ?, user_verifyTime = ? WHERE email = ?',
-    [verifyCode, verifyPhoneTime, email]
+    'UPDATE users SET user_verifycode = ?, user_phonenumber = ?, user_verifyTime = ? WHERE email = ?',
+    [verifyCode, phoneNumber, verifyPhoneTime, email]
   );
 };
 

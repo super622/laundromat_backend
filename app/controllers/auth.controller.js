@@ -62,7 +62,7 @@ const requestVerifyCode = async (req, res) => {
 
     const verifyCode = generateVerificationCode();
 
-    await updateUserVerifyCode(email, verifyCode);
+    await updateUserVerifyCode(email, verifyCode, phoneNumber);
 
     const verifiedContent = `Your verification code is here: \n ${verifyCode}`;
     await phoneSms.pushNotification(verifiedContent, phoneNumber);
