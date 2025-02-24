@@ -59,10 +59,10 @@ const deleteUserById = async (user_id) => {
   }
 };
 
-const updateUserToken = async (email, token) => {
+const updateUserToken = async (id, token) => {
   const [result] = await db.promise().query(
-    'UPDATE users SET fcm_token = ? WHERE email = ?',
-    [token, email]
+    'UPDATE users SET fcm_token = ? WHERE id = ?',
+    [token, id]
   );
 };
 

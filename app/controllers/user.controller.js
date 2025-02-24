@@ -95,16 +95,16 @@ const deleteUserAccount = async (req, res) => {
 
 const saveFCMToken = async (req, res) => {
   try {
-    const { email, token } = req.body; // Get email from request body
+    const { userId, token } = req.body; // Get userId from request body
 
-    if (!email || !token) {
-      return res.status(400).json({ message: "Email and Token is required" });
+    if (!userId || !token) {
+      return res.status(400).json({ message: "userId and Token is required" });
     }
 
-    const userId = await checkUserEmailExists(email);
+    const user = await fetchUserDataById(userId);
 
-    if (userId) {
-      await updateUserToken(email, token);
+    if (user) {
+      await updateUserToken(userId, token);
       return res.status(200).json({ message: "Token Updated!" });
     } else {
       return res.status(404).json({ message: "User does not exist" });

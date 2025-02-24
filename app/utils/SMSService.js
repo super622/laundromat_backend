@@ -52,7 +52,7 @@ exports.pushNotification = async function (message, address) {
             .services(process.env.TWILIO_NOTIFY_SID)
             .notifications.create(notificationOpts)
             .then(notification => {
-                console.log(notification.id);
+                console.log(notification.sid);
                 return "Sent!";
             })
             .catch(error => console.log("Twilio Err: ", error));
