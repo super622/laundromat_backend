@@ -51,28 +51,20 @@ const requestVerifyCode = async (req, res) => {
       return res.status(400).json({ message: 'Phone number and User Id is required' });
     }
 
-    console.log(phone);
     const phoneNumber = await phoneSms.checkPhoneNumber(phone);
     if (!phoneNumber) {
       return res.status(400).json({ message: "Invalid Phone Number" });
     }
 
-    console.log(phoneNumber);
-
     const existingUser = await fetchUserDataById(userId);
     if (!existingUser) {
       return res.status(404).json({ message: "User Not Found! Please Register First." });
     }
-    console.log(existingUser);
 
     const verifyCode = generateVerificationCode();
-    console.log(verifyCode);
     await updateUserVerifyCode(userId, verifyCode, phoneNumber);
-    console.log("Update the db");
     const verifiedContent = `Your verification code is here: \n ${verifyCode}`;
-    console.log(verifiedContent);
     await phoneSms.pushNotification(verifiedContent, phoneNumber);
-    console.log('sent');
     res.status(200).json({
       message: 'Verifycation code sent!',
     });
