@@ -1,4 +1,4 @@
-const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken, trackUserLogin  } = require('../models/user.model');
+const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken, trackUserLogin, updateQuestionCount  } = require('../models/user.model');
 const { sendNotification, sendNotificationToMultipleUsers } = require('../utils/FirebaseService');
 
 // Get all users
@@ -130,4 +130,8 @@ const sendNotifications = async (req, res) => {
   return res.status(200).json({ message: "Sent!" });
 };
 
-module.exports = { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount, saveFCMToken, sendNotifications };
+const addquestion = async (req, res) => {
+  await updateQuestionCount(1);
+};
+
+module.exports = { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount, saveFCMToken, sendNotifications, addquestion };

@@ -40,20 +40,60 @@ const fetchUserDataById = async (user_id) => {
   return rows.length > 0 ? rows[0] : null;
 };
 
-const trackUserLogin = async (user_id) => {
-  const today = new Date().toISOString().split('T')[0]; // Get current date (YYYY-MM-DD)
-
-  const query = `
-    INSERT INTO user_login_history (userid, count, created_at, updated_at) 
-    VALUES (?, 1, NOW(), NOW())
-    ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
+const updateQuestionCount = async (user_id) => {
+  const updateQuery = `
+    UPDATE users 
+    SET question_cnt = question_cnt + 1 
+    WHERE id = ?;
   `;
-
-  await db.promise().query(query, [user_id]);
+  await db.promise().query(updateQuery, [user_id]);
 };
 
-
-
+const trackUserLogin = async (user_id) => {
+  const query = `
+    SELECT *
+    FROM user_login_history
+    WHERE userid = ?
+    ORDER BY updated_at DESC
+    LIMIT 1;
+  `;
+  const [rows] = await db.promise().query(query, [user_id]);
+  
+  if (rows.length > 0) {
+    const today = new Date().toISOString().split('T')[0];
+    const lastUpdatedDate = rows[0].updated_at.toISOString().split('T')[0];
+    if (lastUpdatedDate === today) {
+      const updateQuery = `
+        UPDATE user_login_history 
+        SET count = count + 1, updated_at = NOW() 
+        WHERE userid = ?;
+      `;
+      await db.promise().query(updateQuery, [user_id]);
+    } else {
+      const insertQuery = `
+        INSERT INTO user_login_history (userid, count, created_at, updated_at)
+        VALUES (
+          ?,
+          1,
+          NOW(),
+          NOW()
+        );
+      `;
+      await db.promise().query(insertQuery, [user_id]);
+    }
+  } else {
+    const insertQuery = `
+      INSERT INTO user_login_history (userid, count, created_at, updated_at)
+      VALUES (
+        ?,
+        1,
+        NOW(),
+        NOW()
+      );
+    `;
+    await db.promise().query(insertQuery, [user_id]);
+  }
+};
 
 const checkUserEmailExists = async (email) => {
   const query = `
@@ -170,4 +210,6 @@ module.exports = {
   getAllMemberFCMTokens, 
   getFCMToken, 
   fetchUserDataByQuestionId,
-  trackUserLogin };
+  trackUserLogin,
+  updateQuestionCount
+};

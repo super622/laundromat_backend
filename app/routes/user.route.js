@@ -1,5 +1,5 @@
 const express = require('express');
-const { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount, saveFCMToken, sendNotifications } = require('../controllers/user.controller');
+const { fetchUsers, getUserDataById, checkGoogleUser, deleteUserAccount, saveFCMToken, sendNotifications, addquestion } = require('../controllers/user.controller');
 const router = express.Router();
 
 // Define routes
@@ -8,5 +8,6 @@ router.get('/userdata/:user_id', getUserDataById);
 router.post('/googlecheck', checkGoogleUser);
 router.post('/deleteuser', deleteUserAccount);
 router.post('/saveFCMToken', saveFCMToken);
-router.post('/notification', sendNotifications)
+router.post('/notification', sendNotifications);
+router.post('/addquestion', addquestion);
 module.exports = router;

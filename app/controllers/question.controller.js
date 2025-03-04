@@ -15,7 +15,7 @@ const {
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
-const { getAllMemberFCMTokens, fetchUserDataById, fetchUserDataByQuestionId } = require('../models/user.model');
+const { getAllMemberFCMTokens, fetchUserDataById, fetchUserDataByQuestionId, updateQuestionCount } = require('../models/user.model');
 const { sendNotificationToMultipleUsers, sendNotification } = require('../utils/FirebaseService');
 
   // Initialize OpenAI (No `Configuration` class needed)
@@ -181,6 +181,8 @@ const createNewQuestion = async (req, res) => {
       user_id: userID,
       is_who: "AI",
     });
+
+    await updateQuestionCount(userID);
 
     const tokens = await getAllMemberFCMTokens(userID);
     const userInfo = await fetchUserDataById(userID);
