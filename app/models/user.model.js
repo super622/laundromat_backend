@@ -43,7 +43,7 @@ const fetchUserDataById = async (user_id) => {
 const updateQuestionCount = async (user_id) => {
   const updateQuery = `
     UPDATE users 
-    SET question_cnt = question_cnt + 1 
+    SET question_cnt = COALESCE(question_cnt, 0) + 1 
     WHERE id = ?;
   `;
   await db.promise().query(updateQuery, [user_id]);
