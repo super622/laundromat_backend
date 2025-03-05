@@ -25,14 +25,21 @@ const fetchUserDataById = async (user_id) => {
       u.user_phonenumber,
       u.user_verifyTime,
       u.user_verifycode,
-      COALESCE(ulh.count, 0) AS login_count  -- Get login count, default to 0 if null
+      COALESCE(ulh.count, 0) AS login_count,  -- Get login count, default to 0 if null
+      COALESCE(q.question_count, 0) AS question_count,  -- Count of questions
+      COALESCE(a.answer_count, 0) AS answer_count  -- Count of distinct question_ids answered
     FROM 
       users u
     LEFT JOIN 
-      user_login_history ulh ON u.id = ulh.userid 
-      AND DATE(ulh.created_at) = CURDATE() -- Only fetch today's login count
+      user_login_history ulh ON u.id = ulh.userid
+    LEFT JOIN 
+      (SELECT user_id, COUNT(*) AS question_count FROM questions GROUP BY user_id) q 
+      ON u.id = q.user_id
+    LEFT JOIN 
+      (SELECT user_id, COUNT(DISTINCT question_id) AS answer_count FROM answers GROUP BY user_id) a 
+      ON u.id = a.user_id
     WHERE 
-      u.id = ?;
+      u.id = ?; 
   `;
 
   const [rows] = await db.promise().query(query, [user_id]);
@@ -60,26 +67,26 @@ const trackUserLogin = async (user_id) => {
   const [rows] = await db.promise().query(query, [user_id]);
   
   if (rows.length > 0) {
-    const today = new Date().toISOString().split('T')[0];
-    const lastUpdatedDate = rows[0].updated_at.toISOString().split('T')[0];
-    if (lastUpdatedDate === today) {
+    const today = new Date();
+    const lastUpdatedDate = new Date(rows[0].updated_at);
+
+    const diffInTime = today.setHours(0, 0, 0, 0) - lastUpdatedDate.setHours(0, 0, 0, 0);
+    const diffInDays = diffInTime / (1000 * 60 * 60 * 24);
+
+    if (diffInDays === 1) {
       const updateQuery = `
         UPDATE user_login_history 
         SET count = count + 1, updated_at = NOW() 
         WHERE userid = ?;
       `;
       await db.promise().query(updateQuery, [user_id]);
-    } else {
-      const insertQuery = `
-        INSERT INTO user_login_history (userid, count, created_at, updated_at)
-        VALUES (
-          ?,
-          1,
-          NOW(),
-          NOW()
-        );
+    } else if (diffInDays > 1 || isNaN(lastUpdatedDate.getTime())) {
+      const updateQuery = `
+        UPDATE user_login_history 
+        SET count = 1, updated_at = NOW() 
+        WHERE userid = ?;
       `;
-      await db.promise().query(insertQuery, [user_id]);
+      await db.promise().query(updateQuery, [user_id]);
     }
   } else {
     const insertQuery = `
