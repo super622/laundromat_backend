@@ -9,33 +9,51 @@ const getAllUsers = (callback) => {
 const fetchUserDataById = async (user_id) => {
   const query = `
     SELECT 
-      id AS user_id,
-      user_name,
-      email,
-      password,
-      level,
-      user_role,
-      user_role_expertIn,
-      user_role_businessTime,
-      user_role_laundromatsCount,
-      user_image,
-      created_at,
-      updated_at,
-      user_address,
-      user_phonenumber,
-      user_verifyTime,
-      user_verifycode
+      u.id AS user_id,
+      u.user_name,
+      u.email,
+      u.password,
+      u.level,
+      u.user_role,
+      u.user_role_expertIn,
+      u.user_role_businessTime,
+      u.user_role_laundromatsCount,
+      u.user_image,
+      u.created_at,
+      u.updated_at,
+      u.user_address,
+      u.user_phonenumber,
+      u.user_verifyTime,
+      u.user_verifycode,
+      COALESCE(ulh.count, 0) AS login_count  -- Get login count, default to 0 if null
     FROM 
-      users
+      users u
+    LEFT JOIN 
+      user_login_history ulh ON u.id = ulh.userid 
+      AND DATE(ulh.created_at) = CURDATE() -- Only fetch today's login count
     WHERE 
-      id = ?;
+      u.id = ?;
   `;
 
   const [rows] = await db.promise().query(query, [user_id]);
 
-  // Return the first row if found
   return rows.length > 0 ? rows[0] : null;
 };
+
+const trackUserLogin = async (user_id) => {
+  const today = new Date().toISOString().split('T')[0]; // Get current date (YYYY-MM-DD)
+
+  const query = `
+    INSERT INTO user_login_history (userid, count, created_at, updated_at) 
+    VALUES (?, 1, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
+  `;
+
+  await db.promise().query(query, [user_id]);
+};
+
+
+
 
 const checkUserEmailExists = async (email) => {
   const query = `
@@ -143,4 +161,13 @@ const fetchUserDataByQuestionId = async (question_id) => {
   return user.length > 0 ? user[0] : null;
 };
 
-module.exports = { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken, getAllMemberFCMTokens, getFCMToken, fetchUserDataByQuestionId };
+module.exports = { 
+  getAllUsers, 
+  fetchUserDataById, 
+  checkUserEmailExists, 
+  deleteUserById, 
+  updateUserToken, 
+  getAllMemberFCMTokens, 
+  getFCMToken, 
+  fetchUserDataByQuestionId,
+  trackUserLogin };

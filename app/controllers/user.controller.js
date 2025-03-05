@@ -1,4 +1,4 @@
-const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken  } = require('../models/user.model');
+const { getAllUsers, fetchUserDataById, checkUserEmailExists, deleteUserById, updateUserToken, trackUserLogin  } = require('../models/user.model');
 const { sendNotification, sendNotificationToMultipleUsers } = require('../utils/FirebaseService');
 
 // Get all users
@@ -12,7 +12,6 @@ const fetchUsers = (req, res) => {
   });
 };
 
-
 const getUserDataById = async (req, res) => {
   try {
     const { user_id } = req.params; // Get user_id from request parameters
@@ -21,15 +20,22 @@ const getUserDataById = async (req, res) => {
       return res.status(400).json({ message: 'User ID is required' });
     }
 
+    // Fetch user data
     const user = await fetchUserDataById(user_id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Track user login
+    await trackUserLogin(user_id);
+
+    // Fetch updated login count after tracking
+    const updatedUser = await fetchUserDataById(user_id);
+
     res.status(200).json({
       message: 'User data fetched successfully',
-      user,
+      user: updatedUser,
     });
   } catch (error) {
     res.status(500).json({
@@ -38,6 +44,7 @@ const getUserDataById = async (req, res) => {
     });
   }
 };
+
 
 const checkGoogleUser = async (req, res) => {
   try {
