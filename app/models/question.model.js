@@ -23,8 +23,6 @@ const getAllQuestionsWithAnswers = async () => {
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      COALESCE(likes.count, 0) AS likes_count,
-      COALESCE(dislikes.count, 0) AS dislikes_count,
       COALESCE(
         JSON_ARRAYAGG(
           JSON_OBJECT(
@@ -36,7 +34,9 @@ const getAllQuestionsWithAnswers = async () => {
             'created_at', a.created_at,
             'updated_at', a.updated_at,
             'isWho', a.isWho,
-            'solved_state', a.solved_state
+            'solved_state', a.solved_state,
+            'likes_count', COALESCE(likes.count, 0),
+            'dislikes_count', COALESCE(dislikes.count, 0)
           )
         ), '[]'
       ) AS answers
@@ -46,17 +46,17 @@ const getAllQuestionsWithAnswers = async () => {
     LEFT JOIN answers a ON q.id = a.question_id
     LEFT JOIN users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 1
-      GROUP BY question_id
-    ) likes ON q.id = likes.question_id
+      GROUP BY answer_id
+    ) likes ON a.id = likes.answer_id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 0
-      GROUP BY question_id
-    ) dislikes ON q.id = dislikes.question_id
+      GROUP BY answer_id
+    ) dislikes ON a.id = dislikes.answer_id
     GROUP BY q.id
     ORDER BY q.id DESC;
   `;
@@ -269,17 +269,17 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
     LEFT JOIN 
       users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
         FROM likes_and_dislikes
         WHERE type = 1
-        GROUP BY question_id
-      ) likes ON q.id = likes.question_id
+        GROUP BY answer_id
+      ) likes ON a.id = likes.answer_id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
         FROM likes_and_dislikes
         WHERE type = 0
-        GROUP BY question_id
-      ) dislikes ON q.id = dislikes.question_id
+        GROUP BY answer_id
+      ) dislikes ON a.id = dislikes.answer_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
         SELECT 1 FROM answers WHERE answers.question_id = q.id
@@ -371,17 +371,17 @@ const getAllQuestionsWithAnswersBySearch = async (search, categories) => {
     LEFT JOIN 
       users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 1
-      GROUP BY question_id
-    ) likes ON q.id = likes.question_id
+      GROUP BY answer_id
+    ) likes ON a.id = likes.answer_id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 0
-      GROUP BY question_id
-    ) dislikes ON q.id = dislikes.question_id
+      GROUP BY answer_id
+    ) dislikes ON a.id = dislikes.answer_id
     WHERE 
       q.question LIKE CONCAT('%', ?, '%') -- Search by question text
       ${hasCategories ? `AND q.category IN (${categories.map(() => '?').join(',')})` : ''}
@@ -484,17 +484,17 @@ const getAllQuestionsWithAnswersBySearchByUserId = async (user_id, search, categ
     LEFT JOIN 
       users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 1
-      GROUP BY question_id
-    ) likes ON q.id = likes.question_id
+      GROUP BY answer_id
+    ) likes ON a.id = likes.answer_id
     LEFT JOIN (
-      SELECT question_id, COUNT(*) AS count
+      SELECT answer_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 0
-      GROUP BY question_id
-    ) dislikes ON q.id = dislikes.question_id
+      GROUP BY answer_id
+    ) dislikes ON a.id = dislikes.answer_id
     WHERE 
       q.user_id = ?
       AND (
