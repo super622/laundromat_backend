@@ -1,26 +1,26 @@
 const db = require('../config/db'); // Updated to use `promiseDb`
 
 // Create or update a like or dislike
-const createOrUpdateLikeOrDislike = async (user_id, question_id, type) => {
+const createOrUpdateLikeOrDislike = async (user_id, answer_id, type) => {
   try {
-    // Check if a record exists for the given user_id and question_id
+    // Check if a record exists for the given user_id and answer_id
     const [existingRecord] = await db.promise().query(
-      'SELECT id FROM likes_and_dislikes WHERE user_id = ? AND question_id = ?',
-      [user_id, question_id]
+      'SELECT id FROM likes_and_dislikes WHERE user_id = ? AND answer_id = ?',
+      [user_id, answer_id]
     );
 
     if (existingRecord.length > 0) {
       // Update the existing record
       const [updateResult] = await db.promise().query(
-        'UPDATE likes_and_dislikes SET type = ? WHERE user_id = ? AND question_id = ?',
-        [type, user_id, question_id]
+        'UPDATE likes_and_dislikes SET type = ? WHERE user_id = ? AND answer_id = ?',
+        [type, user_id, answer_id]
       );
       return { message: 'Record updated successfully', updated: true };
     } else {
       // Create a new record
       const [insertResult] = await db.promise().query(
-        'INSERT INTO likes_and_dislikes (user_id, question_id, type) VALUES (?, ?, ?)',
-        [user_id, question_id, type]
+        'INSERT INTO likes_and_dislikes (user_id, answer_id, type) VALUES (?, ?, ?)',
+        [user_id, answer_id, type]
       );
       return { message: 'Record created successfully', created: true };
     }
@@ -51,16 +51,16 @@ const getLikesAndDislikesByUser = async (user_id) => {
   }
 };
 
-// Fetch likes and dislikes counts by question_id
-const getLikesAndDislikesByQuestion = async (question_id) => {
+// Fetch likes and dislikes counts by answer_id
+const getLikesAndDislikesByQuestion = async (answer_id) => {
   try {
     const [likesResult] = await db.promise().query(
-      'SELECT COUNT(*) AS count FROM likes_and_dislikes WHERE question_id = ? AND type = 1',
-      [question_id]
+      'SELECT COUNT(*) AS count FROM likes_and_dislikes WHERE answer_id = ? AND type = 1',
+      [answer_id]
     );
     const [dislikesResult] = await db.promise().query(
-      'SELECT COUNT(*) AS count FROM likes_and_dislikes WHERE question_id = ? AND type = 0',
-      [question_id]
+      'SELECT COUNT(*) AS count FROM likes_and_dislikes WHERE answer_id = ? AND type = 0',
+      [answer_id]
     );
 
     return {

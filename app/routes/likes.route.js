@@ -28,9 +28,9 @@ router.get(
 
 // GET: Fetch likes and dislikes count by question_id
 router.get(
-    '/question/:question_id',
+    '/answer/:answer_id',
     [
-        param('question_id').notEmpty().isInt().withMessage('Question ID must be a valid integer'),
+        param('answer_id').notEmpty().isInt().withMessage('Answer ID must be a valid integer'),
     ],
     (req, res, next) => {
         const errors = validationResult(req);

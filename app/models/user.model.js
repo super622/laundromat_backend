@@ -36,7 +36,7 @@ const fetchUserDataById = async (user_id) => {
       (SELECT user_id, COUNT(*) AS question_count FROM questions GROUP BY user_id) q 
       ON u.id = q.user_id
     LEFT JOIN 
-      (SELECT user_id, COUNT(DISTINCT question_id) AS answer_count FROM answers GROUP BY user_id) a 
+      (SELECT user_id, COUNT(DISTINCT question_id) AS answer_count FROM answers WHERE isWho != 'AI' GROUP BY user_id) a 
       ON u.id = a.user_id
     WHERE 
       u.id = ?; 

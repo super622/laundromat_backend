@@ -5,7 +5,7 @@
 exports.up = function(knex) {
     return knex.schema.createTable('likes_and_dislikes', (table) => {
         table.increments('id').primary();
-        table.integer('question_id').notNullable();
+        table.integer('question_id').nullable();
         table.integer('user_id').notNullable();
         table.integer('type').notNullable();
         table.timestamps(true, true);

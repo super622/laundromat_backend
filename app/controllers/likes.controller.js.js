@@ -3,7 +3,7 @@ const { getLikesAndDislikesByUser, getLikesAndDislikesByQuestion, createOrUpdate
 
 // Create or update like or dislike
 const handleLikeOrDislike = async (req, res) => {
-    const { user_id, question_id, type } = req.body;
+    const { user_id, answer_id, type } = req.body;
   
     // Ensure type is either 1 (like) or 0 (dislike)
     if (![0, 1].includes(type)) {
@@ -11,7 +11,7 @@ const handleLikeOrDislike = async (req, res) => {
     }
   
     try {
-      const result = await createOrUpdateLikeOrDislike(user_id, question_id, type);
+      const result = await createOrUpdateLikeOrDislike(user_id, answer_id, type);
       return res.status(200).json(result);
     } catch (error) {
       console.error('Error handling like or dislike:', error.message);
@@ -34,10 +34,10 @@ const getLikesDislikesByUser = async (req, res) => {
 
 // Fetch likes and dislikes count by question_id
 const getLikesDislikesByQuestion = async (req, res) => {
-    const { question_id } = req.params; // Extracting `question_id` from params
+    const { answer_id } = req.params; // Extracting `answer_id` from params
 
     try {
-        const counts = await getLikesAndDislikesByQuestion(question_id);
+        const counts = await getLikesAndDislikesByQuestion(answer_id);
         return res.status(200).json(counts);
     } catch (error) {
         console.error('Error fetching likes and dislikes counts by question:', error.message);
