@@ -36,7 +36,8 @@ const getAllQuestionsWithAnswers = async () => {
             'isWho', a.isWho,
             'solved_state', a.solved_state,
             'likes_count', COALESCE(likes.count, 0),
-            'dislikes_count', COALESCE(dislikes.count, 0)
+            'dislikes_count', COALESCE(dislikes.count, 0),
+            'answer_user_like_status', COALESCE(user_like_status.like_dislike_status, 'none')
           )
         ), '[]'
       ) AS answers
@@ -57,6 +58,17 @@ const getAllQuestionsWithAnswers = async () => {
       WHERE type = 0
       GROUP BY answer_id
     ) dislikes ON a.id = dislikes.answer_id
+    LEFT JOIN (
+      SELECT 
+        lad.answer_id, 
+        CASE 
+          WHEN lad.type = 1 THEN 'liked' 
+          WHEN lad.type = 0 THEN 'disliked' 
+          ELSE 'none' 
+        END AS like_dislike_status
+      FROM likes_and_dislikes lad
+      WHERE lad.user_id = (SELECT user_id FROM answers WHERE id = lad.answer_id LIMIT 1)
+    ) user_like_status ON a.id = user_like_status.answer_id
     GROUP BY q.id
     ORDER BY q.id DESC;
   `;
@@ -242,8 +254,6 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      COALESCE(likes.count, 0) AS likes_count,
-      COALESCE(dislikes.count, 0) AS dislikes_count,
       COALESCE(
         JSON_ARRAYAGG(
           JSON_OBJECT(
@@ -255,7 +265,10 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
             'answer_created_at', a.created_at,
             'answer_updated_at', a.updated_at,
             'isWho', a.isWho,
-            'solved_state', a.solved_state
+            'solved_state', a.solved_state,
+            'likes_count', COALESCE(likes.count, 0),
+            'dislikes_count', COALESCE(dislikes.count, 0),
+            'answer_user_like_status', COALESCE(user_like_status.like_dislike_status, 'none')
           )
         ),
         JSON_ARRAY()
@@ -280,6 +293,17 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
         WHERE type = 0
         GROUP BY answer_id
       ) dislikes ON a.id = dislikes.answer_id
+    LEFT JOIN (
+      SELECT 
+        lad.answer_id, 
+        CASE 
+          WHEN lad.type = 1 THEN 'liked' 
+          WHEN lad.type = 0 THEN 'disliked' 
+          ELSE 'none' 
+        END AS like_dislike_status
+      FROM likes_and_dislikes lad
+      WHERE lad.user_id = (SELECT user_id FROM answers WHERE id = lad.answer_id LIMIT 1)
+    ) user_like_status ON a.id = user_like_status.answer_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
         SELECT 1 FROM answers WHERE answers.question_id = q.id
