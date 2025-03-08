@@ -270,7 +270,9 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
             'solved_state', a.solved_state,
             'likes_count', COALESCE(likes.count, 0),
             'dislikes_count', COALESCE(dislikes.count, 0),
-            'answer_user_like_status', COALESCE(user_like_status.like_dislike_status, 'none')
+            'answer_user_like_status', COALESCE(user_like_status.like_dislike_status, 'none'),
+            'liked_user_ids', COALESCE(like_user_ids.user_ids, JSON_ARRAY()),
+            'disliked_user_ids', COALESCE(dislike_user_ids.user_ids, JSON_ARRAY())
           )
         ),
         JSON_ARRAY()
@@ -306,6 +308,18 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       FROM likes_and_dislikes lad
       WHERE lad.user_id = ?
     ) user_like_status ON a.id = user_like_status.answer_id
+    LEFT JOIN (
+      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
+      FROM likes_and_dislikes
+      WHERE type = 1
+      GROUP BY answer_id
+    ) like_user_ids ON a.id = like_user_ids.answer_id
+    LEFT JOIN (
+      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
+      FROM likes_and_dislikes
+      WHERE type = 0
+      GROUP BY answer_id
+    ) dislike_user_ids ON a.id = dislike_user_ids.answer_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
         SELECT 1 FROM answers WHERE answers.question_id = q.id
