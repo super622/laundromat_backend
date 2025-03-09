@@ -25,13 +25,25 @@ const fetchUserDataById = async (user_id) => {
       u.user_phonenumber,
       u.user_verifyTime,
       u.user_verifycode,
-      COALESCE(ulh.count, 0) AS login_count,  -- Get login count, default to 0 if null
-      COALESCE(q.question_count, 0) AS question_count,  -- Count of questions
-      COALESCE(a.answer_count, 0) AS answer_count  -- Count of distinct question_ids answered
+      COALESCE(ulh.count, 0) AS login_count,
+      COALESCE(q.question_count, 0) AS question_count,
+      COALESCE(a.answer_count, 0) AS answer_count,
+      COALESCE(qs.solved_count, 0) AS solved_count,
+      COALESCE(li.like_count, 0) AS like_count,
+      COALESCE(dli.dislike_count, 0) AS dislike_count
     FROM 
       users u
     LEFT JOIN 
       user_login_history ulh ON u.id = ulh.userid
+    LEFT JOIN 
+      (SELECT user_id, COUNT(*) AS solved_count FROM questions WHERE solved_state = 'Solved' GROUP BY user_id) qs 
+      ON u.id = qs.user_id
+    LEFT JOIN 
+      (SELECT user_id, COUNT(*) AS like_count FROM likes_and_dislikes WHERE type = 1 GROUP BY user_id) li
+      ON u.id = li.user_id
+    LEFT JOIN 
+      (SELECT user_id, COUNT(*) AS dislike_count FROM likes_and_dislikes WHERE type = 2 GROUP BY user_id) dli
+      ON u.id = dli.user_id
     LEFT JOIN 
       (SELECT user_id, COUNT(*) AS question_count FROM questions GROUP BY user_id) q 
       ON u.id = q.user_id
@@ -39,7 +51,7 @@ const fetchUserDataById = async (user_id) => {
       (SELECT user_id, COUNT(DISTINCT question_id) AS answer_count FROM answers WHERE isWho != 'AI' GROUP BY user_id) a 
       ON u.id = a.user_id
     WHERE 
-      u.id = ?; 
+      u.id = ?;
   `;
 
   const [rows] = await db.promise().query(query, [user_id]);
