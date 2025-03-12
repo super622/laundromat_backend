@@ -23,9 +23,9 @@ const getAllQuestionsWithAnswers = async (current_user_id) => {
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      COALESCE(likes.count, 0) AS likes_count,
-      COALESCE(dislikes.count, 0) AS dislikes_count,
-      COALESCE(user_reaction.reaction, -1) AS liked_by_user,
+      COALESCE(MAX(likes.count), 0) AS likes_count,
+      COALESCE(MAX(dislikes.count), 0) AS dislikes_count,
+      COALESCE(MAX(user_reaction.reaction), -1) AS liked_by_user,
       IFNULL(JSON_ARRAYAGG(
         CASE 
           WHEN a.id IS NOT NULL THEN 
@@ -51,7 +51,6 @@ const getAllQuestionsWithAnswers = async (current_user_id) => {
     LEFT JOIN users qu ON q.user_id = qu.id
     LEFT JOIN answers a ON q.id = a.question_id
     LEFT JOIN users au ON a.user_id = au.id
-    -- Question Likes and Dislikes
     LEFT JOIN (
       SELECT question_id, COUNT(*) AS count
       FROM likes_and_dislikes
@@ -64,31 +63,27 @@ const getAllQuestionsWithAnswers = async (current_user_id) => {
       WHERE type = 0
       GROUP BY question_id
     ) dislikes ON q.id = dislikes.question_id
-    -- Question Liked by User
     LEFT JOIN (
       SELECT question_id, user_id, 
              CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
       FROM likes_and_dislikes
       WHERE user_id = ?
     ) user_reaction ON q.id = user_reaction.question_id
-    -- Answer Likes Count
     LEFT JOIN (
       SELECT answer_id, COUNT(*) AS count
       FROM answer_likes
       WHERE type = 1
       GROUP BY answer_id
     ) answer_likes ON a.id = answer_likes.answer_id
-    -- Answer Dislikes Count
     LEFT JOIN (
       SELECT answer_id, COUNT(*) AS count
       FROM answer_likes
       WHERE type = 0
       GROUP BY answer_id
     ) answer_dislikes ON a.id = answer_dislikes.answer_id
-    -- Answer Liked by User
     LEFT JOIN (
       SELECT answer_id, user_id, 
-             CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
+        CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
       FROM answer_likes
       WHERE user_id = ?
     ) answer_user_reaction ON a.id = answer_user_reaction.answer_id
