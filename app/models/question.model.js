@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 // Get all questions with answers
-const getAllQuestionsWithAnswers = async () => {
+const getAllQuestionsWithAnswers = async (current_user_id) => {
   const query = `
     SELECT 
       q.id AS question_id, 
@@ -23,95 +23,110 @@ const getAllQuestionsWithAnswers = async () => {
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      COALESCE(
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'answer_id', a.id,
-            'answer', a.answer,
-            'answer_user_id', a.user_id,
-            'answer_user_name', au.user_name,
-            'answer_user_image', au.user_image,
-            'created_at', a.created_at,
-            'updated_at', a.updated_at,
-            'isWho', a.isWho,
-            'solved_state', a.solved_state,
-            'likes_count', COALESCE(likes.count, 0),
-            'dislikes_count', COALESCE(dislikes.count, 0),
-            'liked_user_ids', COALESCE(like_user_ids.user_ids, JSON_ARRAY()),
-            'disliked_user_ids', COALESCE(dislike_user_ids.user_ids, JSON_ARRAY())
-          )
-        ), '[]'
-      ) AS answers
+      COALESCE(likes.count, 0) AS likes_count,
+      COALESCE(dislikes.count, 0) AS dislikes_count,
+      COALESCE(user_reaction.reaction, -1) AS liked_by_user,
+      IFNULL(JSON_ARRAYAGG(
+        CASE 
+          WHEN a.id IS NOT NULL THEN 
+            JSON_OBJECT(
+              'answer_id', a.id,
+              'answer', a.answer,
+              'answer_user_id', a.user_id,
+              'answer_user_name', au.user_name,
+              'answer_user_image', au.user_image,
+              'created_at', a.created_at,
+              'updated_at', a.updated_at,
+              'isWho', a.isWho,
+              'solved_state', a.solved_state,
+              'likes_count', COALESCE(answer_likes.count, 0), 
+              'dislikes_count', COALESCE(answer_dislikes.count, 0), 
+              'liked_by_user', COALESCE(answer_user_reaction.reaction, -1)
+            )
+          ELSE NULL 
+        END
+      ), '[]') AS answers
     FROM 
       questions q
     LEFT JOIN users qu ON q.user_id = qu.id
     LEFT JOIN answers a ON q.id = a.question_id
     LEFT JOIN users au ON a.user_id = au.id
+    -- Question Likes and Dislikes
     LEFT JOIN (
-      SELECT answer_id, COUNT(*) AS count
+      SELECT question_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 1
-      GROUP BY answer_id
-    ) likes ON a.id = likes.answer_id
+      GROUP BY question_id
+    ) likes ON q.id = likes.question_id
+    LEFT JOIN (
+      SELECT question_id, COUNT(*) AS count
+      FROM likes_and_dislikes
+      WHERE type = 0
+      GROUP BY question_id
+    ) dislikes ON q.id = dislikes.question_id
+    -- Question Liked by User
+    LEFT JOIN (
+      SELECT question_id, user_id, 
+             CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
+      FROM likes_and_dislikes
+      WHERE user_id = ?
+    ) user_reaction ON q.id = user_reaction.question_id
+    -- Answer Likes Count
     LEFT JOIN (
       SELECT answer_id, COUNT(*) AS count
-      FROM likes_and_dislikes
-      WHERE type = 0
-      GROUP BY answer_id
-    ) dislikes ON a.id = dislikes.answer_id
-    LEFT JOIN (
-      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
-      FROM likes_and_dislikes
+      FROM answer_likes
       WHERE type = 1
       GROUP BY answer_id
-    ) like_user_ids ON a.id = like_user_ids.answer_id
+    ) answer_likes ON a.id = answer_likes.answer_id
+    -- Answer Dislikes Count
     LEFT JOIN (
-      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
-      FROM likes_and_dislikes
+      SELECT answer_id, COUNT(*) AS count
+      FROM answer_likes
       WHERE type = 0
       GROUP BY answer_id
-    ) dislike_user_ids ON a.id = dislike_user_ids.answer_id
+    ) answer_dislikes ON a.id = answer_dislikes.answer_id
+    -- Answer Liked by User
+    LEFT JOIN (
+      SELECT answer_id, user_id, 
+             CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
+      FROM answer_likes
+      WHERE user_id = ?
+    ) answer_user_reaction ON a.id = answer_user_reaction.answer_id
     GROUP BY q.id
     ORDER BY q.id DESC;
   `;
 
-  const [rows] = await db.promise().query(query);
-  const questionsMap = {};
+  const [rows] = await db.promise().query(query, [current_user_id, current_user_id]);
 
-  rows.forEach((row, index) => {
-    if (!questionsMap[index]) {
-      questionsMap[index] = {
-        question_id: row.question_id,
-        question: row.question,
-        brand: row.brand,
-        serial_number: row.serial_number,
-        pounds: row.pounds,
-        year: row.year,
-        category: row.category,
-        file: row.file,
-        image: row.image,
-        tags: row.tags,
-        created_at: row.question_created_at,
-        updated_at: row.question_updated_at,
-        solved_state: row.solved_state,
-        tip_amount: row.tip_amount,
-        user: row.question_user_id
-          ? {
-              user_id: row.question_user_id,
-              user_name: row.question_user_name,
-              email: row.question_user_email,
-              level: row.question_user_level,
-              user_role: row.question_user_role,
-            }
-          : null,
-        likes_count: row.likes_count || 0,
-        dislikes_count: row.dislikes_count || 0,
-        answers: JSON.parse(row.answers) || [],
-      };
-    }
-  });
-
-  return Object.values(questionsMap);
+  return rows.map(row => ({
+    question_id: row.question_id,
+    question: row.question,
+    brand: row.brand,
+    serial_number: row.serial_number,
+    pounds: row.pounds,
+    year: row.year,
+    category: row.category,
+    file: row.file,
+    image: row.image,
+    tags: row.tags,
+    created_at: row.question_created_at,
+    updated_at: row.question_updated_at,
+    solved_state: row.solved_state,
+    tip_amount: row.tip_amount,
+    user: row.question_user_id
+      ? {
+          user_id: row.question_user_id,
+          user_name: row.question_user_name,
+          email: row.question_user_email,
+          level: row.question_user_level,
+          user_role: row.question_user_role,
+        }
+      : null,
+    likes_count: row.likes_count || 0,
+    dislikes_count: row.dislikes_count || 0,
+    liked_by_user: row.liked_by_user,
+    answers: JSON.parse(row.answers) || [],
+  }));
 };
 
 const createQuestion = async (questionData) => {

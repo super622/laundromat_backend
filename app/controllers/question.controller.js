@@ -25,10 +25,17 @@ const { sendNotificationToMultipleUsers, sendNotification } = require('../utils/
 
   const getQuestionsWithAnswers = async (req, res) => {
     try {
-      const questions = await getAllQuestionsWithAnswers();
+      const current_user_id = req.user ? req.user.id : req.query.user_id;
+
+      if (!current_user_id) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      const questions = await getAllQuestionsWithAnswers(current_user_id);
+
       res.status(200).json({
-        message: 'Questions with answers fetched successfully',
-        questions,
+          message: 'Questions with answers fetched successfully',
+          questions,
       });
     } catch (error) {
       res.status(500).json({
