@@ -3,15 +3,15 @@ const { getLikesAndDislikesByUser, getLikesAndDislikesByQuestion, createOrUpdate
 
 // Create or update like or dislike
 const handleLikeOrDislike = async (req, res) => {
-    const { user_id, answer_id, type } = req.body;
+    const { user_id, question_id, type } = req.body;
   
     // Ensure type is either 1 (like) or 0 (dislike)
-    if (![0, 1].includes(type)) {
+    if (![-1, 0, 1].includes(type)) {
       return res.status(400).json({ message: 'Invalid type. Must be 0 (dislike) or 1 (like).' });
     }
   
     try {
-      const result = await createOrUpdateLikeOrDislike(user_id, answer_id, type);
+      const result = await createOrUpdateLikeOrDislike(user_id, question_id, type);
       return res.status(200).json(result);
     } catch (error) {
       console.error('Error handling like or dislike:', error.message);
