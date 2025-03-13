@@ -267,76 +267,76 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
       qu.email AS question_user_email, 
       qu.level AS question_user_level, 
       qu.user_role AS question_user_role,
-      COALESCE(
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'answer_id', a.id,
-            'answer', a.answer,
-            'answer_user_id', a.user_id,
-            'answer_user_name', au.user_name,
-            'answer_user_image', au.user_image,
-            'answer_created_at', a.created_at,
-            'answer_updated_at', a.updated_at,
-            'isWho', a.isWho,
-            'solved_state', a.solved_state,
-            'likes_count', COALESCE(likes.count, 0),
-            'dislikes_count', COALESCE(dislikes.count, 0),
-            'answer_user_like_status', COALESCE(user_like_status.like_dislike_status, 'none'),
-            'liked_user_ids', COALESCE(like_user_ids.user_ids, JSON_ARRAY()),
-            'disliked_user_ids', COALESCE(dislike_user_ids.user_ids, JSON_ARRAY())
-          )
-        ),
-        JSON_ARRAY()
-      ) AS answers
+      COALESCE(MAX(likes.count), 0) AS likes_count,
+      COALESCE(MAX(dislikes.count), 0) AS dislikes_count,
+      COALESCE(MAX(user_reaction.reaction), -1) AS liked_by_user,
+      IFNULL(JSON_ARRAYAGG(
+        CASE 
+          WHEN a.id IS NOT NULL THEN 
+            JSON_OBJECT(
+              'answer_id', a.id,
+              'answer', a.answer,
+              'answer_user_id', a.user_id,
+              'answer_user_name', au.user_name,
+              'answer_user_image', au.user_image,
+              'created_at', a.created_at,
+              'updated_at', a.updated_at,
+              'isWho', a.isWho,
+              'solved_state', a.solved_state,
+              'likes_count', COALESCE(answer_likes.count, 0), 
+              'dislikes_count', COALESCE(answer_dislikes.count, 0), 
+              'liked_by_user', COALESCE(answer_user_reaction.reaction, -1)
+            )
+          ELSE NULL 
+        END
+      ), '[]') AS answers
     FROM 
       questions q
-    LEFT JOIN 
-      users qu ON q.user_id = qu.id
-    LEFT JOIN 
-      answers a ON q.id = a.question_id
-    LEFT JOIN 
-      users au ON a.user_id = au.id
+    LEFT JOIN users qu ON q.user_id = qu.id
+    LEFT JOIN answers a ON q.id = a.question_id
+    LEFT JOIN users au ON a.user_id = au.id
     LEFT JOIN (
-      SELECT answer_id, COUNT(*) AS count
-        FROM likes_and_dislikes
-        WHERE type = 1
-        GROUP BY answer_id
-      ) likes ON a.id = likes.answer_id
-    LEFT JOIN (
-      SELECT answer_id, COUNT(*) AS count
-        FROM likes_and_dislikes
-        WHERE type = 0
-        GROUP BY answer_id
-      ) dislikes ON a.id = dislikes.answer_id
-    LEFT JOIN (
-      SELECT 
-        lad.answer_id, 
-        CASE 
-          WHEN lad.type = 1 THEN 'liked' 
-          WHEN lad.type = 0 THEN 'disliked' 
-          ELSE 'none' 
-        END AS like_dislike_status
-      FROM likes_and_dislikes lad
-      WHERE lad.user_id = ?
-    ) user_like_status ON a.id = user_like_status.answer_id
-    LEFT JOIN (
-      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
+      SELECT question_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 1
-      GROUP BY answer_id
-    ) like_user_ids ON a.id = like_user_ids.answer_id
+      GROUP BY question_id
+    ) likes ON q.id = likes.question_id
     LEFT JOIN (
-      SELECT answer_id, JSON_ARRAYAGG(user_id) AS user_ids
+      SELECT question_id, COUNT(*) AS count
       FROM likes_and_dislikes
       WHERE type = 0
+      GROUP BY question_id
+    ) dislikes ON q.id = dislikes.question_id
+    LEFT JOIN (
+      SELECT question_id, user_id, 
+             CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
+      FROM likes_and_dislikes
+      WHERE user_id = ?
+    ) user_reaction ON q.id = user_reaction.question_id
+    LEFT JOIN (
+      SELECT answer_id, COUNT(*) AS count
+      FROM answer_likes
+      WHERE type = 1
       GROUP BY answer_id
-    ) dislike_user_ids ON a.id = dislike_user_ids.answer_id
+    ) answer_likes ON a.id = answer_likes.answer_id
+    LEFT JOIN (
+      SELECT answer_id, COUNT(*) AS count
+      FROM answer_likes
+      WHERE type = 0
+      GROUP BY answer_id
+    ) answer_dislikes ON a.id = answer_dislikes.answer_id
+    LEFT JOIN (
+      SELECT answer_id, user_id, 
+        CASE WHEN type = 1 THEN 1 WHEN type = 0 THEN 0 ELSE -1 END AS reaction
+      FROM answer_likes
+      WHERE user_id = ?
+    ) answer_user_reaction ON a.id = answer_user_reaction.answer_id
     WHERE q.user_id = ?
       AND (a.id IS NOT NULL OR NOT EXISTS (
         SELECT 1 FROM answers WHERE answers.question_id = q.id
       ))
     GROUP BY q.id
-    ORDER BY q.id DESC;   
+    ORDER BY q.id DESC;
   `;
 
   const [rows] = await db.promise().query(query, [user_id, user_id, user_id]);
