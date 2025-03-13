@@ -213,11 +213,12 @@ const createAnswer = async (data) => {
   const { question_id, user_id, answer, isWho } = data;
 
   try {
-    await db.promise().query(
+    const [result] = await db.promise().query(
       'INSERT INTO answers (question_id, user_id, answer, isWho, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
       [question_id, user_id, answer, isWho]
     );
-    return true;
+    
+    return result.insertId;
   } catch (error) {
     console.error(`Database error: ${error.message}`);
     throw new Error('Database operation failed');

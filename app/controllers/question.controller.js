@@ -297,7 +297,7 @@ const updateAnswer = async (req, res) => {
         const postUser = await fetchUserDataById(user_id);
         const Owner = await fetchUserDataByQuestionId(question_id);
         await sendNotification(Owner.fcm_token, "New Answer", `${postUser.user_name} answered your question.`)
-        return res.status(201).json({ message: "Answer created successfully.", created: true });
+        return res.status(201).json({ message: "Answer created successfully.", created: true, answerId: result });
       } else {
         return res.status(500).json({ message: "Failed to create the answer." });
       }
