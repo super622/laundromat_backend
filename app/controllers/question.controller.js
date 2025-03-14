@@ -15,8 +15,8 @@ const {
   } = require('../models/question.model');
 
   const OpenAI = require('openai'); // Correct import for OpenAI 4.x+
-const { getAllMemberFCMTokens, fetchUserDataById, fetchUserDataByQuestionId, updateQuestionCount } = require('../models/user.model');
-const { sendNotificationToMultipleUsers, sendNotification } = require('../utils/FirebaseService');
+  const { getAllMemberFCMTokens, fetchUserDataById, fetchUserDataByQuestionId, updateQuestionCount } = require('../models/user.model');
+  const { sendNotificationToMultipleUsers, sendNotification } = require('../utils/FirebaseService');
 
   // Initialize OpenAI (No `Configuration` class needed)
   const openai = new OpenAI({

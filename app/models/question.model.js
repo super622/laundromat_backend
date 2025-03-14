@@ -289,7 +289,9 @@ const getAllQuestionsWithAnswersByID = async (user_id) => {
             )
           ELSE NULL 
         END
-      ), '[]') AS answers
+      ), 
+      JSON_ARRAY()
+      ) AS answers
     FROM 
       questions q
     LEFT JOIN users qu ON q.user_id = qu.id
