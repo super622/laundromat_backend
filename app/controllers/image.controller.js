@@ -24,6 +24,8 @@ async function uploadToBucket(file) {
         ContentType: type,
         ACL: 'public-read'
     };
+
+    console.log(params);
   
     const command = new PutObjectCommand(params);
     const upload = await s3.send(command);
