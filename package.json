@@ -53,6 +53,7 @@
     "puppeteer": "^23.0.2",
     "socket.io": "^4.7.4",
     "socket.io-server": "^1.0.0-b",
+    "stripe": "^17.7.0",
     "twilio": "^5.4.5",
     "uuid": "^11.0.5",
     "web3": "^4.1.1"

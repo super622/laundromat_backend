@@ -17,6 +17,8 @@ const imageRoute = require('./app/routes/image.route');
 const questionRoute = require('./app/routes/question.route');
 const gptRoute = require('./app/routes/gpt.route');
 const answerLikeRoute = require('./app/routes/answerlike.route');
+const paymentRoute = require('./app/routes/payment.route');
+const transactionRoute = require('./app/routes/transaction.route');
 
 const authMiddleware = require('./app/middlewares/auth.middleware');
 
@@ -55,6 +57,8 @@ app.use('/image', imageRoute);
 app.use('/api/question', questionRoute)
 app.use('/', gptRoute)
 app.use("/api/answer-likes", answerLikeRoute);
+app.use("/api/payment", paymentRoute);
+app.use("/api/transaction", transactionRoute);
 
 const PORT = process.env.PORT || 5000;
 
