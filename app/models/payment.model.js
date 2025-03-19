@@ -5,6 +5,11 @@ const getPayment = async (userId, paymentId) => {
     return data.length > 0 ? data[0] : null;
 };
 
+const getUserFromDatabase = async (userId) => {
+    const [data] = await db.promise().query('SELECT * FROM users WHERE id = ?', [userId]);
+    return data.length > 0 ? data[0] : null;
+};
+
 const createPaymentData = async (userId, paymentId) => {
     const [rows] = await db.promise().query(
         "SELECT * FROM payment WHERE user_id = ?",
@@ -34,4 +39,20 @@ const updatePaymentData = async (userId, paymentId, amount) => {
     return { message: "Updated", updated: true };
 };
 
-module.exports = { getPayment, createPaymentData, updatePaymentData };
+const updatePaymentInfo = async (email, amount, customerId, paymentMethodId, bankAccountId, stripeAccountId) => {
+    if (amount) {
+        await db.promise().query(
+            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, amount = amount + ?, stripeAccountId = ? WHERE email = ?",
+            [paymentMethodId, bankAccountId, customerId, amount, stripeAccountId, email]
+        );
+    } else {
+        await db.promise().query(
+            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, stripeAccountId = ? WHERE email = ?",
+            [paymentMethodId, bankAccountId, customerId, stripeAccountId, email]
+        );
+    }
+
+    return { message: "Updated", updated: true };
+};
+
+module.exports = { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase };
