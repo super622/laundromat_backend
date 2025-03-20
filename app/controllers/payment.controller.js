@@ -68,11 +68,21 @@ const payOut = async (req, res) => {
 
 const processBankTransactionwithDeposit = async (req, res) => {
     try {
-        const {name,  email, accountNumber, routingNumber, amount, currency, amounts, verify } = req.body;
+        const {
+            accountNumber,
+            routingNumber,
+            amount,
+            currency,
+            amounts,
+            verify,
+            kycData // ✅ All personal info comes from kycData
+        } = req.body;
+
+        const fullName = `${kycData.first_name} ${kycData.last_name}`;
 
         // ✅ Step 1: Check if the customer exists, or create a new one
-        let customers = await stripe.customers.list({ email });
-        let customer = customers.data.length > 0 ? customers.data[0] : await stripe.customers.create({ email });
+        let customers = await stripe.customers.list({ email: kycData.email });
+        let customer = customers.data.length > 0 ? customers.data[0] : await stripe.customers.create({ email: kycData.email });
 
         // ✅ Step 2: Find an existing bank account for the customer
         const bankAccounts = await stripe.customers.listSources(customer.id, { object: "bank_account" });
@@ -90,7 +100,7 @@ const processBankTransactionwithDeposit = async (req, res) => {
                     currency: "usd",
                     account_number: accountNumber,
                     routing_number: routingNumber,
-                    account_holder_name: name,
+                    account_holder_name: fullName,
                     account_holder_type: "individual",
                 },
             });
@@ -106,7 +116,7 @@ const processBankTransactionwithDeposit = async (req, res) => {
         // ✅ Step 4: If account is NOT verified, require micro-deposit verification
         if (bankAccount.status !== "verified") {
             if (verify && amounts) {
-                console.log("adsfasdf");
+                console.log("✅ Inside MICRO-DEPOSIT VERIFICATION flow, creating payeeAccount");
                 // User submits micro-deposit amounts, so we verify the account
                 await stripe.customers.verifySource(customer.id, bankAccount.id, { amounts });
 
@@ -115,36 +125,62 @@ const processBankTransactionwithDeposit = async (req, res) => {
                     type: "us_bank_account",
                 });
 
-                const payeeAccount = await stripe.accounts.create({
-                    type: 'custom', // You can use 'express' or 'standard' as well, depending on the use case
+                 // Create the Payee account (handle errors here)
+                 const payeeAccount = await stripe.accounts.create({
+                    type: 'custom', 
                     country: "US",
-                    email: email,
+                    email: kycData.email,
                     business_type: 'individual',
                     capabilities: {
                         card_payments: { requested: true },
-                        transfers: { requested: true }, // Needed for payouts
+                        transfers: { requested: true },
                     },
+                    individual: {
+                        first_name: kycData.first_name,
+                        last_name: kycData.last_name,
+                        id_number: kycData.full_ssn,
+                        email: kycData.email,
+                        phone: kycData.phone,
+                        dob: kycData.dob,
+                        address: kycData.address
+                    },
+                    business_profile: {
+                        mcc: "7216", // Laundromat MCC
+                        url: kycData.website,
+                    },
+                    tos_acceptance: {
+                        date: Math.floor(Date.now() / 1000),
+                        ip: req.ip || "127.0.0.1"
+                    }
                 });
 
                 console.log('Payee Account ID:', payeeAccount.id); // Log the payee account ID
+                const account = await stripe.accounts.retrieve(payeeAccount.id);
+                console.log(account.capabilities);
+
+                 // Ensure payeeAccount is valid
+                if (!payeeAccount || !payeeAccount.id) {
+                    return res.status(500).json({ error: "Failed to retrieve payee account ID." });
+                }
 
                 // ✅ Step 6: Link the verified bank account to the payee's Stripe account
-                const externalAccount = await stripe.accounts.createExternalAccount(payeeAccount.id, {
+                const externalBank = await stripe.accounts.createExternalAccount(payeeAccount.id, {
                     external_account: {
-                        object: "bank_account",
-                        country: "US", // Payee's bank country
-                        currency: "usd", // Currency of the bank account
-                        account_number: accountNumber,
-                        routing_number: routingNumber,
-                    },
+                        object: 'bank_account',
+                        country: 'US',
+                        currency: 'usd',
+                        account_number: accountNumber,  // test value
+                        routing_number: routingNumber,  // test value
+                        account_holder_name: `${kycData.first_name} ${kycData.last_name}`,
+                        account_holder_type: 'individual',
+                    }
                 });
-
-
+                
+                console.log("✅ External Bank Linked:", externalBank.id);  
                  // Optionally, you can store the payee's Stripe account ID and bank account info in your database
-                 await storePayeeInfo(email, payeeAccount.id, externalAccount.id);
+                //  await storePayeeInfo(email, payeeAccount.id, externalAccount.id);
         
                 let paymentMethod = paymentMethods.data.find((pm) => pm.us_bank_account);
-        
                 // Step 2: If no payment method exists, create one
                 if (!paymentMethod) {
                     paymentMethod = await stripe.paymentMethods.create({
@@ -154,22 +190,25 @@ const processBankTransactionwithDeposit = async (req, res) => {
                             routing_number: updatedBankAccount.routing_number,
                             account_holder_type: updatedBankAccount.account_holder_type,
                         },
-                        billing_details: { name: name }, // Replace with actual name
+                        billing_details: { name: fullName }, // Replace with actual name
                     });
         
                     // Attach the payment method to the customer
                     await stripe.paymentMethods.attach(paymentMethod.id, { customer: customer.id });
                 }
-                await updatePaymentInfo(email, null, customer.id, paymentMethod.id, bankAccount.id, stripeAccountId);
+                await updatePaymentInfo(kycData.email, null, customer.id, paymentMethod.id, bankAccount.id, payeeAccount.id);
+
                 return res.json({
                     success: true,
                     message: "Bank account verified successfully! You can now make transactions.",
                     customerid : customer.id,
                     bankAccountId : bankAccount.id,
-                    paymentMethodId : paymentMethod.id,
-                    payeeAccountId: payeeAccount.id, // Payee's Stripe account ID
+                    payeeAccountId: payeeAccount ? payeeAccount.id : null,
+                    payeeAccountId: payeeAccount.id,
                 });
                 
+            }else{
+                console.log("✅ Bank Account already verified — skipping payee creation");
             }
 
             return res.status(400).json({
@@ -220,7 +259,7 @@ const processBankTransactionwithDeposit = async (req, res) => {
                 return_url: "https://your-website.com/payment-success",
             });
 
-            await updatePaymentInfo(email, amount, customer.id, paymentMethod.id, bankAccount.id, null);
+            // await updatePaymentInfo(email, amount, customer.id, paymentMethod.id, bankAccount.id, null);
 
             return res.json({
                 success: true,
@@ -232,7 +271,7 @@ const processBankTransactionwithDeposit = async (req, res) => {
             });
         }
 
-        await updatePaymentInfo(email, null, customer.id, paymentMethod.id, bankAccount.id, null);
+        // await updatePaymentInfo(email, null, customer.id, paymentMethod.id, bankAccount.id, null);
         return res.json({
             success: true,
             customerId: customer.id,
@@ -245,6 +284,26 @@ const processBankTransactionwithDeposit = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+const checkStripeAccountStatus = async (req, res) => {
+    try {
+      const { payeeAccountId } = req.body;
+  
+      const account = await stripe.accounts.retrieve(payeeAccountId);
+  
+      return res.json({
+        success: true,
+        capabilities: account.capabilities,
+        payouts_enabled: account.payouts_enabled,
+        charges_enabled: account.charges_enabled,
+        details_submitted: account.details_submitted,
+        requirements: account.requirements,
+        status: (account.payouts_enabled && account.charges_enabled) ? "Complete" : "Pending"
+      });
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+}
 
 // Example of function to store payee's Stripe account and bank account info
 async function storePayeeInfo(email, payeeAccountId, externalAccountId) {
@@ -302,12 +361,38 @@ const reDeposit = async (req, res) => {
             paymentStatus: paymentIntent.status,
             message: "Deposit successful!",
         });
-        await updatePaymentInfo(user.email, amount, user.customerId, user.paymentMethodId, user.bankAccountId);
+        // await updatePaymentInfo(user.email, amount, user.customerId, user.paymentMethodId, user.bankAccountId);
 
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
+
+const deleteConnectedAccount = async (req, res) => {
+    try {
+        const { stripeAccountId } = req.body;
+
+        if (!stripeAccountId) {
+            return res.status(400).json({ success: false, message: "stripeAccountId is required." });
+        }
+
+        // Delete the connected custom account
+        const deletedAccount = await stripe.accounts.del(stripeAccountId);
+
+        return res.json({
+            success: true,
+            message: "Connected Stripe account deleted successfully.",
+            deletedAccount,
+        });
+    } catch (error) {
+        console.error('Error deleting Stripe account:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || "An error occurred while deleting the account.",
+        });
+    }
+};
+
 
 
 const withdrawFunds = async (req, res) => {
@@ -349,11 +434,11 @@ const withdrawFunds = async (req, res) => {
 const sendMoney = async (req, res) => {
     try {
         const {
-            payerCustomerId,          // Customer ID of the payer (payer's bank account)
-            payerPaymentMethodId,     // Payment method ID (payer's bank account)
-            amount,                   // Amount to transfer in cents (e.g., 5000 = $50.00)
-            currency,                 // Currency (e.g., "usd")
-            payeeCustomerId,          // Customer ID of the payee (payee's Stripe account)
+            payerCustomerId,      
+            payerPaymentMethodId, 
+            amount,               
+            currency,             
+            payeestripeAccountId, 
         } = req.body;
 
         // Step 1: Create the PaymentIntent for the payer (charge their bank account)
@@ -365,7 +450,16 @@ const sendMoney = async (req, res) => {
             payment_method_types: ["us_bank_account"], // ACH payment method
             confirm: true, // Confirm the payment immediately
             transfer_data: {
-                destination: payeeCustomerId, // Payee's Stripe account ID (destination)
+                destination: payeestripeAccountId, // Payee's Stripe account ID (destination)
+            },
+            mandate_data: {
+                customer_acceptance: {
+                    type: "online",
+                    online: {
+                        ip_address: req.ip || "127.0.0.1",
+                        user_agent: req.headers["user-agent"] || "Unknown",
+                    },
+                },
             },
             return_url: "https://your-website.com/payment-success", // URL after successful payment
         });
@@ -376,7 +470,7 @@ const sendMoney = async (req, res) => {
             message: "Payment processed successfully!",
             paymentIntentId: paymentIntent.id,
             status: paymentIntent.status,
-            payeeCustomerId: payeeCustomerId,
+            payeeStripeAccountId: payeestripeAccountId,
             amountTransferred: amount,
         });
 
@@ -386,7 +480,7 @@ const sendMoney = async (req, res) => {
             error: error.message,
         });
     }
-  };
+};
 
 
-module.exports = { createPayment, updatePayment, payOut, processBankTransactionwithDeposit, reDeposit, withdrawFunds, sendMoney};
+module.exports = { createPayment, updatePayment, payOut, processBankTransactionwithDeposit, reDeposit, withdrawFunds, sendMoney, deleteConnectedAccount, checkStripeAccountStatus};
