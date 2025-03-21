@@ -25,6 +25,8 @@ const fetchUserDataById = async (user_id) => {
       u.user_phonenumber,
       u.user_verifyTime,
       u.user_verifycode,
+      u.amount,
+      u.stripeAccountId,
       COALESCE(ulh.count, 0) AS login_count,
       COALESCE(q.question_count, 0) AS question_count,
       COALESCE(a.answer_count, 0) AS answer_count,
