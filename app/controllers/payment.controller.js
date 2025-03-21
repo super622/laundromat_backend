@@ -205,6 +205,7 @@ const processBankTransactionwithDeposit = async (req, res) => {
                     bankAccountId : bankAccount.id,
                     stripeAccountId: payeeAccount ? payeeAccount.id : null,
                     externalBankAccountId: externalBank.id,
+                    bankstate : account.capabilities
                 });
                 
             }else{
