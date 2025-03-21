@@ -1,5 +1,5 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase } = require('../models/payment.model');
+const { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData } = require('../models/payment.model');
 
 const checkBalance = async () => {
     const balance = await stripe.balance.retrieve();
@@ -355,14 +355,15 @@ const reDeposit = async (req, res) => {
                 },
             },
         });
-
+        await updateAmountData(userId, amount);
         res.json({
             success: true,
             paymentIntentId: paymentIntent.id,
             paymentStatus: paymentIntent.status,
             message: "Deposit successful!",
         });
-        // await updatePaymentInfo(user.email, amount, user.customerId, user.paymentMethodId, user.bankAccountId);
+       
+
 
     } catch (error) {
         res.status(400).json({ error: error.message });

@@ -55,4 +55,14 @@ const updatePaymentInfo = async (email, amount, customerId, paymentMethodId, ban
     return { message: "Updated", updated: true };
 };
 
-module.exports = { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase };
+const updateAmountData = async (userid, amount) => {
+    const updateAmount = amount ?? 0;
+    await db.promise().query(
+        "UPDATE users SET amount = COALESCE(amount, 0) + ? WHERE id = ?",
+        [updateAmount, userid]
+    );
+
+    return { message: "Updated", updated: true };
+}
+
+module.exports = { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData };
