@@ -196,15 +196,15 @@ const processBankTransactionwithDeposit = async (req, res) => {
                     // Attach the payment method to the customer
                     await stripe.paymentMethods.attach(paymentMethod.id, { customer: customer.id });
                 }
-                await updatePaymentInfo(kycData.email, null, customer.id, paymentMethod.id, bankAccount.id, payeeAccount.id);
+                await updatePaymentInfo(kycData.email, null, customer.id, paymentMethod.id, bankAccount.id, payeeAccount.id, externalBank.id);
 
                 return res.json({
                     success: true,
                     message: "Bank account verified successfully! You can now make transactions.",
                     customerid : customer.id,
                     bankAccountId : bankAccount.id,
-                    payeeAccountId: payeeAccount ? payeeAccount.id : null,
-                    payeeAccountId: payeeAccount.id,
+                    stripeAccountId: payeeAccount ? payeeAccount.id : null,
+                    externalBankAccountId: externalBank.id,
                 });
                 
             }else{
@@ -306,16 +306,16 @@ const checkStripeAccountStatus = async (req, res) => {
 }
 
 // Example of function to store payee's Stripe account and bank account info
-async function storePayeeInfo(email, payeeAccountId, externalAccountId) {
-    // Replace this with your database logic
-    const payee = await Payee.create({
-        email: email,
-        stripeAccountId: payeeAccountId,
-        stripeBankAccountId: externalAccountId,
-    });
+// async function storePayeeInfo(email, payeeAccountId, externalAccountId) {
+//     // Replace this with your database logic
+//     const payee = await Payee.create({
+//         email: email,
+//         stripeAccountId: payeeAccountId,
+//         stripeBankAccountId: externalAccountId,
+//     });
 
-    console.log('Payee info stored:', payee);
-}
+//     console.log('Payee info stored:', payee);
+// }
 
 const reDeposit = async (req, res) => {
     try {
@@ -395,41 +395,85 @@ const deleteConnectedAccount = async (req, res) => {
 
 
 
+// const withdrawFunds = async (req, res) => {
+//     try {
+//         const { userId, amount, currency } = req.body;
+
+//         // Fetch user’s Stripe account details (Connected Account or your main Stripe balance)
+//         const user = await getUserFromDatabase(userId);
+//         if (!user || !user.customerId) {
+//             return res.status(400).json({ error: "No Stripe account found. Please link a bank account first." });
+//         }
+//         console.log("user.stripeAccountId : ", user.stripeAccountId);
+//         // Retrieve the bank accounts linked to the user's Stripe account
+//         const bankAccounts = await stripe.accounts.listExternalAccounts(user.stripeAccountId, { object: "bank_account" });
+        
+//         // Find the bank account to use for the payout
+//         const bankAccount = bankAccounts.data.find(account => account.id === user.bankAccountId);
+        
+//         if (!bankAccount) {
+//             return res.status(400).json({ error: "No valid external bank account found for payouts." });
+//         }
+
+//         // Convert amount to cents (Stripe uses smallest currency unit)
+//         // const amountInCents = Math.round(amount * 100);
+
+//         // Create a payout to the user's bank account
+//          // Create a payout
+//          const payout = await stripe.payouts.create({
+//             amount: amount,
+//             currency: currency || "usd",
+//             destination: user.bankAccountId, // Bank account linked to Stripe
+//             method: "standard",
+//         }, {
+//             stripeAccount: user.stripeAccountId, // Required for Connect accounts
+//         });
+
+//         res.json({
+//             success: true,
+//             payoutId: payout.id,
+//             status: payout.status,
+//             message: "Withdrawal request successful!",
+//         });
+
+//     } catch (error) {
+//         res.status(400).json({ error: error.message });
+//     }
+// };
+
 const withdrawFunds = async (req, res) => {
     try {
         const { userId, amount, currency } = req.body;
 
-        // Fetch user’s Stripe account details (Connected Account or your main Stripe balance)
         const user = await getUserFromDatabase(userId);
-        if (!user || !user.customerId) {
+        if (!user || !user.stripeAccountId) {
             return res.status(400).json({ error: "No Stripe account found. Please link a bank account first." });
         }
 
-        // Convert amount to cents (Stripe uses smallest currency unit)
+        // Amount must be in cents
         // const amountInCents = Math.round(amount * 100);
 
-        // Create a payout to the user's bank account
-         // Create a payout
-         const payout = await stripe.payouts.create({
+        // ✅ No 'destination' needed for connected custom account payouts
+        const payout = await stripe.payouts.create({
             amount: amount,
             currency: currency || "usd",
-            destination: user.bankAccountId, // Bank account linked to Stripe
-            method: "standard",
         }, {
-            stripeAccount: user.customerId, // Required for Connect accounts
+            stripeAccount: user.stripeAccountId,
         });
 
         res.json({
             success: true,
             payoutId: payout.id,
             status: payout.status,
-            message: "Withdrawal request successful!",
+            message: "Withdrawal (Payout) successful!",
         });
 
     } catch (error) {
+        console.error("Withdrawal Error:", error);
         res.status(400).json({ error: error.message });
     }
 };
+
 
 const sendMoney = async (req, res) => {
     try {

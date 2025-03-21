@@ -60,7 +60,7 @@ app.use("/api/answer-likes", answerLikeRoute);
 app.use("/api/payment", paymentRoute);
 app.use("/api/transaction", transactionRoute);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);

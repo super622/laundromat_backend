@@ -39,16 +39,16 @@ const updatePaymentData = async (userId, paymentId, amount) => {
     return { message: "Updated", updated: true };
 };
 
-const updatePaymentInfo = async (email, amount, customerId, paymentMethodId, bankAccountId, stripeAccountId) => {
+const updatePaymentInfo = async (email, amount, customerId, paymentMethodId, bankAccountId, stripeAccountId, externalAccountID) => {
     if (amount) {
         await db.promise().query(
-            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, amount = amount + ?, stripeAccountId = ? WHERE email = ?",
-            [paymentMethodId, bankAccountId, customerId, amount, stripeAccountId, email]
+            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, amount = amount + ?, stripeAccountId = ?, externalAccountId = ? WHERE email = ?",
+            [paymentMethodId, bankAccountId, customerId, amount, stripeAccountId, externalAccountID, email]
         );
     } else {
         await db.promise().query(
-            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, stripeAccountId = ? WHERE email = ?",
-            [paymentMethodId, bankAccountId, customerId, stripeAccountId, email]
+            "UPDATE users SET paymentMethodId = ?, bankAccountId = ?, customerId = ?, stripeAccountId = ?, externalAccountId = ? WHERE email = ?",
+            [paymentMethodId, bankAccountId, customerId, stripeAccountId,  externalAccountID, email]
         );
     }
 
