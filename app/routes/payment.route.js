@@ -1,10 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { createPayment, updatePayment, 
-    payOut, processBankTransactionwithDeposit, 
-    reDeposit, withdrawFunds, sendMoney, deleteConnectedAccount, 
-    checkStripeAccountStatus, getUpcomingPayoutDate,
-    createTransfer} = require('../controllers/payment.controller');
+const { createPayment, 
+    updatePayment, 
+    payOut, 
+    processBankTransactionwithDeposit, 
+    reDeposit, 
+    withdrawFunds, 
+    sendMoney, 
+    deleteConnectedAccount, 
+    checkStripeAccountStatus, 
+    getUpcomingPayoutDate,
+    createTransfer,
+    getBankAccountInfo
+} = require('../controllers/payment.controller');
 
 // Define the route for listing models
 router.post('/create', createPayment);
@@ -17,6 +25,7 @@ router.post('/sendmoney', sendMoney);
 router.post('/deleteConnectedAccount', deleteConnectedAccount);
 router.post('/checkaccountstatus', checkStripeAccountStatus);
 router.post('/getupcomingpayout', getUpcomingPayoutDate);
-router.post('/transfer', createTransfer)
+router.post('/transfer', createTransfer),
+router.post('/getbankaccountinfo', getBankAccountInfo),
 
 module.exports = router;

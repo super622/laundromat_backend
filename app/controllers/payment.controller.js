@@ -605,6 +605,51 @@ const createTransfer = async (req, res) => {
     }
 };
 
+const getBankAccountInfo = async (req, res) => {
+    try {
+        const { userId } = req.body; // Or use req.params if userId is in URL
+
+        // Fetch the user from your database
+        const user = await getUserFromDatabase(userId);
+        if (!user || !user.stripeAccountId) {
+            return res.status(400).json({ error: "No Stripe account found. Please link a bank account first." });
+        }
+
+        // Retrieve connected account details from Stripe (using the Stripe account ID)
+        const account = await stripe.accounts.retrieve(user.stripeAccountId);
+
+        // Extract the external bank account details (if available)
+        const externalAccounts = account.external_accounts.data;
+        
+        // Check if any bank accounts are linked
+        if (externalAccounts.length > 0) {
+            // Return the first bank account linked to the Stripe account (you can loop through if needed)
+            const bankAccount = externalAccounts[0];
+            return res.json({
+                success: true,
+                bankAccount: {
+                    id: bankAccount.id,
+                    object: bankAccount.object,
+                    bankName: bankAccount.bank_name,
+                    last4: bankAccount.last4,
+                    routingNumber: bankAccount.routing_number,
+                    accountHolderName: bankAccount.account_holder_name,
+                },
+                message: "Bank account info retrieved successfully.",
+            });
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: "No bank account found for this Stripe account."
+            });
+        }
+        
+    } catch (error) {
+        console.error("Error fetching bank account info:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = { 
     createPayment,
     updatePayment, 
@@ -616,5 +661,6 @@ module.exports = {
     deleteConnectedAccount, 
     checkStripeAccountStatus, 
     getUpcomingPayoutDate,
-    createTransfer
+    createTransfer,
+    getBankAccountInfo
 };
