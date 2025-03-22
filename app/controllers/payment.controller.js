@@ -1,5 +1,5 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData } = require('../models/payment.model');
+const { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData, transferAmount } = require('../models/payment.model');
 
 const checkBalance = async () => {
     const balance = await stripe.balance.retrieve();
@@ -586,9 +586,35 @@ const sendMoney = async (req, res) => {
     }
 };
 
+const createTransfer = async (req, res) => {
+    const { senderId, receiverId, amount } = req.body;
+
+    try {
+        if (!senderId || !receiverId || !amount) {
+            return res.status(400).json({ message: 'SenderId, ReceiverId and Amount are required.' });
+        }
+
+        const result = await transferAmount(senderId, receiverId, amount);
+        if (result.status) {
+            return res.status(201).json({ message: "Transfer successfully"});
+        } else {
+            return res.status(404).json({ message: result.msg })
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
 
 module.exports = { 
-    createPayment, updatePayment, 
-    payOut, processBankTransactionwithDeposit, 
-    reDeposit, withdrawFunds, sendMoney, 
-    deleteConnectedAccount, checkStripeAccountStatus, getUpcomingPayoutDate};
+    createPayment,
+    updatePayment, 
+    payOut, 
+    processBankTransactionwithDeposit, 
+    reDeposit, 
+    withdrawFunds, 
+    sendMoney, 
+    deleteConnectedAccount, 
+    checkStripeAccountStatus, 
+    getUpcomingPayoutDate,
+    createTransfer
+};

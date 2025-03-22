@@ -65,4 +65,33 @@ const updateAmountData = async (userid, amount) => {
     return { message: "Updated", updated: true };
 }
 
-module.exports = { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData };
+const transferAmount = async (senderId, receiverId, amount) => {
+    const updateAmount = amount ?? 0;
+    const sender = await getUserFromDatabase(senderId);
+    const receiver = await getUserFromDatabase(receiverId);
+
+    if (!sender) {
+        return { status: false, msg: 'Sender not exist' };
+    }
+
+    if (!receiver) {
+        return { status: false, msg: 'Receiver not exist' };
+    }
+
+    if (sender && sender.amount < updateAmount) {
+        return { status: false, msg: 'Not enough' };
+    }
+
+    await db.promise().query(
+        `UPDATE users SET amount = COALESCE(amount, 0) - ${updateAmount} WHERE id = ${senderId}`,
+        []
+    );
+    await db.promise().query(
+        `UPDATE users SET amount = COALESCE(amount, 0) + ${updateAmount} WHERE id = ${receiverId}`,
+        []
+    );
+
+    return { status: true, msg: 'Success' };
+};
+
+module.exports = { getPayment, transferAmount, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData };
