@@ -443,6 +443,49 @@ const deleteConnectedAccount = async (req, res) => {
 //     }
 // };
 
+const getUpcomingPayoutDate = async (req, res) => {
+    try {
+        // Extract userId from the request body or params
+        const { userId } = req.body; // or use req.params if userId is part of the URL
+        
+        // Fetch the user from your database
+        const user = await getUserFromDatabase(userId);
+        if (!user || !user.stripeAccountId) {
+            return res.status(400).json({ error: "No Stripe account found. Please link a bank account first." });
+        }
+
+        // Retrieve all payouts for the connected account
+        const payouts = await stripe.payouts.list({
+            stripeAccount: user.stripeAccountId,  // Pass the stripeAccount inside options
+            limit: 3,  // Limit should be inside the options object
+        });
+
+
+        // Find the upcoming payout by checking for the status
+        const upcomingPayout = payouts.data.find(payout => payout.status === 'pending');
+
+        if (upcomingPayout) {
+            // Return the expected arrival date of the upcoming payout
+            return res.json({
+                success: true,
+                payoutAmount: upcomingPayout.amount,
+                arrivalDate: upcomingPayout.arrival_date,
+                message: "Upcoming payout found!"
+            });
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: "No upcoming payout found."
+            });
+        }
+
+    } catch (error) {
+        console.error("Error fetching upcoming payout:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+
 const withdrawFunds = async (req, res) => {
     try {
         const { userId, amount, currency } = req.body;
@@ -453,11 +496,26 @@ const withdrawFunds = async (req, res) => {
         }
 
         // Amount must be in cents
-        // const amountInCents = Math.round(amount * 100);
+        const amountInCents = Math.round(amount * 100);
+
+        // Check available balance
+        const balance = await stripe.balance.retrieve({
+            stripeAccount: user.stripeAccountId,
+        });
+
+        const availableBalance = balance.available[0].amount;
+        const pendingBalance = balance.pending[0].amount;
+
+        console.log("Available Balance:", availableBalance);
+        console.log("Pending Balance:", pendingBalance);
+
+        if (availableBalance < amountInCents) {
+            return res.status(400).json({ error: "Insufficient funds in Stripe account." });
+        }
 
         // ✅ No 'destination' needed for connected custom account payouts
         const payout = await stripe.payouts.create({
-            amount: amount,
+            amount: amountInCents,
             currency: currency || "usd",
         }, {
             stripeAccount: user.stripeAccountId,
@@ -529,4 +587,8 @@ const sendMoney = async (req, res) => {
 };
 
 
-module.exports = { createPayment, updatePayment, payOut, processBankTransactionwithDeposit, reDeposit, withdrawFunds, sendMoney, deleteConnectedAccount, checkStripeAccountStatus};
+module.exports = { 
+    createPayment, updatePayment, 
+    payOut, processBankTransactionwithDeposit, 
+    reDeposit, withdrawFunds, sendMoney, 
+    deleteConnectedAccount, checkStripeAccountStatus, getUpcomingPayoutDate};
