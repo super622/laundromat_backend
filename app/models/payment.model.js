@@ -67,6 +67,8 @@ const updateAmountData = async (userid, amount) => {
 
 const transferAmount = async (senderId, receiverId, amount) => {
     const updateAmount = amount ?? 0;
+    const receiverAmount = updateAmount * 0.9;
+
     const sender = await getUserFromDatabase(senderId);
     const receiver = await getUserFromDatabase(receiverId);
 
@@ -87,7 +89,7 @@ const transferAmount = async (senderId, receiverId, amount) => {
         []
     );
     await db.promise().query(
-        `UPDATE users SET amount = COALESCE(amount, 0) + ${updateAmount} WHERE id = ${receiverId}`,
+        `UPDATE users SET amount = COALESCE(amount, 0) + ${receiverAmount} WHERE id = ${receiverId}`,
         []
     );
 
