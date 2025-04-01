@@ -1,5 +1,30 @@
 const db = require('../config/db');
 
+
+const updateTippedDetails = async (answerId, questionId, amount) => {
+    try {
+        let numericAmount = parseFloat(amount); // Use let instead of const
+
+
+        numericAmount = (numericAmount / 100).toFixed(2);
+        // Update the answer's solved_state to "tipped"
+        await db.promise().query(
+            "UPDATE answers SET solved_state = ? WHERE id = ?",
+            ["tipped", answerId]
+        );
+
+        // Update the question's tip_amount
+        await db.promise().query(
+            "UPDATE questions SET tip_amount = ? WHERE id = ?",
+            [numericAmount, questionId]
+        );
+
+        return { status: true, message: "Tipped details updated successfully." };
+    } catch (error) {
+        return { status: false, message: error.message };
+    }
+};
+
 const getPayment = async (userId, paymentId) => {
     const [data] = await db.promise().query('SELECT * FROM payment WHERE user_id = ? and payment_id = ?', [userId, paymentId]);
     return data.length > 0 ? data[0] : null;
@@ -142,5 +167,5 @@ const getBankAccountInfo = async (req, res) => {
 };
 
 
-module.exports = { getPayment, transferAmount, 
-    createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData, getBankAccountInfo };
+module.exports = { getPayment, transferAmount,
+    createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData, getBankAccountInfo, updateTippedDetails };
