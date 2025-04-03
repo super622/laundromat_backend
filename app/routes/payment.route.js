@@ -11,7 +11,8 @@ const { createPayment,
     checkStripeAccountStatus, 
     getUpcomingPayoutDate,
     createTransfer,
-    getBankAccountInfo
+    getBankAccountInfo,
+    subscriptionDeposit
 } = require('../controllers/payment.controller');
 
 // Define the route for listing models
@@ -27,5 +28,6 @@ router.post('/checkaccountstatus', checkStripeAccountStatus);
 router.post('/getupcomingpayout', getUpcomingPayoutDate);
 router.post('/transfer', createTransfer),
 router.post('/getbankaccountinfo', getBankAccountInfo),
+router.post('/subscriptionDeposit', subscriptionDeposit),
 
 module.exports = router;

@@ -80,6 +80,36 @@ const updatePaymentInfo = async (email, amount, customerId, paymentMethodId, ban
     return { message: "Updated", updated: true };
 };
 
+const updateSubscriptionData = async (userId, type) => {
+    // Get current date
+    const currentDate = new Date();
+    let level;
+
+    // Calculate new subscription date based on type
+    let subscriptionDate;
+    if (type === "monthly") {
+        subscriptionDate = new Date(currentDate.setMonth(currentDate.getMonth() + 1)); // Add 1 month
+        level = "2";
+    } else if (type === "yearly") {
+        subscriptionDate = new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)); // Add 1 year
+        level = "3";
+    } else {
+        subscriptionDate = currentDate; // Default to current date if type is not specified or invalid
+    }
+
+    // Update subscription data
+    await db.promise().query(
+        `UPDATE users 
+        SET subscriptionType = ?, 
+            subscriptionDate = ?, 
+            level = ? 
+        WHERE id = ?`,
+        [type, subscriptionDate, level, userId]
+    );
+
+    return { message: "Subscription data updated", updated: true };
+};
+
 const updateAmountData = async (userid, amount) => {
     const updateAmount = amount ?? 0;
     await db.promise().query(
@@ -167,5 +197,15 @@ const getBankAccountInfo = async (req, res) => {
 };
 
 
-module.exports = { getPayment, transferAmount,
-    createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData, getBankAccountInfo, updateTippedDetails };
+module.exports = { 
+    getPayment, 
+    transferAmount,
+    createPaymentData, 
+    updatePaymentData, 
+    updatePaymentInfo, 
+    getUserFromDatabase, 
+    updateAmountData, 
+    getBankAccountInfo, 
+    updateTippedDetails, 
+    updateSubscriptionData 
+};

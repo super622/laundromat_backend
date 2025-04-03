@@ -1,5 +1,14 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const { getPayment, createPaymentData, updatePaymentData, updatePaymentInfo, getUserFromDatabase, updateAmountData, transferAmount } = require('../models/payment.model');
+const { 
+    getPayment, 
+    createPaymentData, 
+    updatePaymentData, 
+    updatePaymentInfo, 
+    getUserFromDatabase, 
+    updateAmountData, 
+    transferAmount, 
+    updateSubscriptionData 
+} = require('../models/payment.model');
 
 const checkBalance = async () => {
     const balance = await stripe.balance.retrieve();
@@ -370,6 +379,59 @@ const reDeposit = async (req, res) => {
     }
 };
 
+
+const subscriptionDeposit = async (req, res) => {
+    try {
+        const { userId, amount, currency, type } = req.body;
+
+        // Stripe's minimum amount per currency (modify as needed)
+        const minAmount = currency === "usd" ? 50 : 50; // Adjust based on currency rules
+
+        // Validate amount
+        if (amount < minAmount) {
+            return res.status(400).json({ error: `Amount must be at least $${(minAmount / 100).toFixed(2)} ${currency}` });
+        }
+
+        // 1️⃣ Fetch user’s saved payment method & customer ID from DB
+        const user = await getUserFromDatabase(userId);
+        if (!user || !user.paymentMethodId || !user.customerId) {
+            return res.status(400).json({ error: "No payment method found. Please add a bank account first." });
+        }
+
+        // 2️⃣ Create a new payment using the saved payment method
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount,
+            currency: currency || "usd",
+            customer: user.customerId,
+            payment_method: user.paymentMethodId,
+            payment_method_types: ["us_bank_account"],
+            confirm: true,
+            return_url: "https://your-website.com/payment-success",
+            mandate_data: {
+                customer_acceptance: {
+                    type: "online",
+                    online: {
+                        ip_address: req.ip,
+                        user_agent: req.headers["user-agent"],
+                    },
+                },
+            },
+        });
+        await updateSubscriptionData(userId, type);
+        res.json({
+            success: true,
+            paymentIntentId: paymentIntent.id,
+            paymentStatus: paymentIntent.status,
+            message: "Deposit successful!",
+        });
+       
+
+
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
 const deleteConnectedAccount = async (req, res) => {
     try {
         const { stripeAccountId } = req.body;
@@ -662,5 +724,6 @@ module.exports = {
     checkStripeAccountStatus, 
     getUpcomingPayoutDate,
     createTransfer,
-    getBankAccountInfo
+    getBankAccountInfo,
+    subscriptionDeposit
 };
